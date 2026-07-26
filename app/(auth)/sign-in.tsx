@@ -1,13 +1,13 @@
-import { Link } from 'expo-router'
-import { View, Text } from 'react-native'
+import { Link } from "expo-router";
+import { Text, View } from "react-native";
 
 const SignIn = () => {
   return (
     <View>
-      <Text>SigIn</Text>
-      <Link href="/(auth)/sign-in">Sign In</Link>
+      <Text>Sign In</Text>
+      <Link href="/(auth)/sign-up">Create an Account</Link>
     </View>
-  )
-}
+  );
+};
 
-export default SignIn
+export default SignIn;
