@@ -258,7 +258,7 @@
   }
 
   .auth-logo-mark {
-    @apply relative size-14 items-center justify-center rounded-2xl bg-accent;
+    @apply relative size-14 items-center justify-center rounded-bl-2xl rounded-tr-2xl bg-accent;
   }
 
   .auth-logo-mark-text {
@@ -297,8 +297,16 @@
     @apply text-sm font-sans-semibold text-primary;
   }
 
-  .auth-input {
-    @apply rounded-2xl border border-border bg-background px-4 py-4 text-base font-sans-medium text-primary;
+  .auth-input-wrap {
+    @apply flex-row items-center rounded-2xl border border-border bg-background px-4;
+  }
+
+  .auth-input-wrap-error {
+    @apply border-destructive;
+  }
+
+  .auth-input-inner {
+    @apply flex-1 py-4 px-2 text-base font-sans-medium text-primary;
   }
 
   .auth-input-error {
