@@ -4,7 +4,7 @@
     "slug": "renovo",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/assets/images/icon.png",
     "scheme": "renovo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -30,13 +30,26 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {
             "backgroundColor": "#000000"
           }
+        }
+      ],
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/assets/fonts/PlusJakartaSans-Regular.ttf",
+            "./assets/assets/fonts/PlusJakartaSans-Bold.ttf",
+            "./assets/assets/fonts/PlusJakartaSans-SemiBold.ttf",
+            "./assets/assets/fonts/PlusJakartaSans-Medium.ttf",
+            "./assets/assets/fonts/PlusJakartaSans-ExtraBold.ttf",
+            "./assets/assets/fonts/PlusJakartaSans-Light.ttf"
+          ]
         }
       ]
     ],
