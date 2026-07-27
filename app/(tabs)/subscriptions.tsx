@@ -5,24 +5,26 @@ import { styled } from "nativewind";
 import { Ionicons } from "@expo/vector-icons";
 import { HOME_SUBSCRIPTIONS } from "@/constants/data";
 import SubscriptionCard from "@/components/SubscriptionCard";
+import { useSubscriptions } from "@/context/SubscriptionContext";
 import { clsx } from "clsx";
 
 const SafeAreaView = styled(RNSafeAreaView);
 
 const Subscriptions = () => {
+  const { subscriptions } = useSubscriptions();
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const filteredSubscriptions = useMemo(() => {
-    if (!searchQuery.trim()) return HOME_SUBSCRIPTIONS;
+    if (!searchQuery.trim()) return subscriptions;
     const query = searchQuery.toLowerCase();
-    return HOME_SUBSCRIPTIONS.filter(
+    return subscriptions.filter(
       (sub) =>
         sub.name.toLowerCase().includes(query) ||
         (sub.category && sub.category.toLowerCase().includes(query)) ||
         (sub.plan && sub.plan.toLowerCase().includes(query))
     );
-  }, [searchQuery]);
+  }, [searchQuery, subscriptions]);
 
   return (
     <SafeAreaView className="flex-1 bg-background p-5" edges={['top', 'left', 'right']}>

@@ -1,5 +1,6 @@
 import ListHeading from "@/components/ListHeading";
 import SubscriptionCard from "@/components/SubscriptionCard";
+import CreateSubscriptionModal from "@/components/CreateSubscriptionModal";
 import UpcomingSubscriptionCard from "@/components/UpcomingSubscriptionCard";
 import {
   HOME_BALANCE,
@@ -17,6 +18,7 @@ import { useState } from "react";
 import { FlatList, Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 import { usePostHog } from "posthog-react-native";
+import { useSubscriptions } from "@/context/SubscriptionContext";
 
 const SafeAreaView = styled(RNSafeAreaView);
 
@@ -24,6 +26,8 @@ export default function App() {
   const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<
     string | null
   >(null);
+  const { subscriptions, addSubscription } = useSubscriptions();
+  const [isModalVisible, setModalVisible] = useState(false);
   const posthog = usePostHog();
 
   return (
@@ -37,7 +41,10 @@ export default function App() {
                 <Text className="home-user-name">{HOME_USER.name}</Text>
               </View>
               <Pressable
-                onPress={() => posthog.capture('add_subscription_tapped')}
+                onPress={() => {
+                  posthog.capture('add_subscription_tapped');
+                  setModalVisible(true);
+                }}
                 testID="add-subscription-button"
               >
                 <Image source={icons.add} className="home-add-icon" />
@@ -78,7 +85,7 @@ export default function App() {
             <ListHeading title="All Subscriptions" />
           </>
         )}
-        data={HOME_SUBSCRIPTIONS}
+        data={subscriptions}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <SubscriptionCard
@@ -104,6 +111,13 @@ export default function App() {
           <Text className="home-empty-state">No subscriptions yet.</Text>
         }
         contentContainerClassName="pb-30"
+      />
+      <CreateSubscriptionModal
+        visible={isModalVisible}
+        onClose={() => setModalVisible(false)}
+        onSubmit={(newSub) => {
+          addSubscription(newSub);
+        }}
       />
     </SafeAreaView>
   );
