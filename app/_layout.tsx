@@ -1,9 +1,11 @@
 import "@/global.css";
 import { useFonts } from "expo-font";
-import { SplashScreen, Stack } from "expo-router";
-import { useEffect } from "react";
+import { SplashScreen, Stack, usePathname, useGlobalSearchParams } from "expo-router";
+import { useEffect, useRef } from "react";
 import { ClerkProvider } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
+import { PostHogProvider } from "posthog-react-native";
+import { posthog } from "@/lib/posthog";
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
@@ -14,6 +16,10 @@ if (!publishableKey) {
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const pathname = usePathname();
+  const params = useGlobalSearchParams();
+  const previousPathname = useRef<string | undefined>(undefined);
+
   const [fontsLoaded, fontsError] = useFonts({
     "PlusJakartaSans-Regular": require("../assets/assets/fonts/PlusJakartaSans-Regular.ttf"),
     "PlusJakartaSans-Bold": require("../assets/assets/fonts/PlusJakartaSans-Bold.ttf"),
@@ -28,11 +34,34 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontsError]);
+
+  // Manual screen tracking for Expo Router
+  useEffect(() => {
+    if (previousPathname.current !== pathname) {
+      posthog.screen(pathname, {
+        previous_screen: previousPathname.current ?? null,
+        ...params,
+      });
+      previousPathname.current = pathname;
+    }
+  }, [pathname, params]);
+
   if (!fontsLoaded && !fontsError) return null;
 
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <Stack screenOptions={{ headerShown: false }} />
+      <PostHogProvider
+        client={posthog}
+        debug={__DEV__}
+        autocapture={{
+          captureScreens: false,
+          captureTouches: true,
+          propsToCapture: ["testID"],
+          maxElementsCaptured: 20,
+        }}
+      >
+        <Stack screenOptions={{ headerShown: false }} />
+      </PostHogProvider>
     </ClerkProvider>
   );
 }

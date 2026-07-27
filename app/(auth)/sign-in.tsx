@@ -1,6 +1,7 @@
 import { useSignIn } from '@clerk/expo';
 import { Link, useRouter } from 'expo-router';
 import React from 'react';
+import { usePostHog } from 'posthog-react-native';
 import {
   Text,
   TextInput,
@@ -18,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 export default function SignIn() {
   const { signIn } = useSignIn();
   const router = useRouter();
+  const posthog = usePostHog();
 
   const [emailAddress, setEmailAddress] = React.useState('');
   const [password, setPassword] = React.useState('');
@@ -37,19 +39,29 @@ export default function SignIn() {
 
       if (result && result.error) {
         setErrorMsg(result.error.message || 'Invalid sign in attempt.');
+        posthog.capture('sign_in_failed', {
+          error_message: result.error.message || 'Invalid sign in attempt.',
+        });
         return;
       }
 
       if (signIn.status === 'complete') {
         await signIn.finalize();
+        posthog.identify(emailAddress, {
+          email: emailAddress,
+        });
+        posthog.capture('user_signed_in');
         router.replace('/(tabs)');
       } else {
         console.error(JSON.stringify(signIn, null, 2));
         setErrorMsg('Invalid sign in attempt.');
+        posthog.capture('sign_in_failed', { error_message: 'Invalid sign in attempt.' });
       }
     } catch (err: any) {
       console.error(JSON.stringify(err, null, 2));
-      setErrorMsg(err.errors?.[0]?.message || 'An error occurred.');
+      const message = err.errors?.[0]?.message || 'An error occurred.';
+      setErrorMsg(message);
+      posthog.capture('sign_in_failed', { error_message: message });
     } finally {
       setLoading(false);
     }

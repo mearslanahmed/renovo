@@ -4,13 +4,26 @@ import { clsx } from "clsx";
 import { Tabs, Redirect } from "expo-router";
 import { Image, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAuth } from "@clerk/expo";
+import { useAuth, useUser } from "@clerk/expo";
+import { useEffect } from "react";
+import { usePostHog } from "posthog-react-native";
 
 const tabBar = components.tabBar;
 
 const TabLayout = () => {
   const { isSignedIn, isLoaded } = useAuth();
+  const { user } = useUser();
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn && user) {
+      const email = user.primaryEmailAddress?.emailAddress;
+      if (email) {
+        posthog.identify(email, { email });
+      }
+    }
+  }, [isLoaded, isSignedIn, user, posthog]);
 
   if (!isLoaded) {
     return null;

@@ -1,8 +1,9 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { styled } from "nativewind";
-import React from "react";
+import React, { useEffect } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
+import { usePostHog } from "posthog-react-native";
 
 const SafeAreaView = styled(RNSafeAreaView);
 
@@ -10,6 +11,13 @@ const SubscriptionDetails = () => {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string | string[] }>();
   const subscriptionId = Array.isArray(id) ? id[0] : id;
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    posthog.capture('subscription_viewed', {
+      subscription_id: subscriptionId ?? null,
+    });
+  }, [subscriptionId, posthog]);
 
   const handleGoBack = () => {
     if (router.canGoBack()) {
