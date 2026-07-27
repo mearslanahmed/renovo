@@ -1,6 +1,7 @@
 import { useSignUp } from '@clerk/expo';
 import { Link, useRouter } from 'expo-router';
 import React from 'react';
+import { usePostHog } from 'posthog-react-native';
 import {
   Text,
   TextInput,
@@ -18,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 export default function SignUp() {
   const { signUp } = useSignUp();
   const router = useRouter();
+  const posthog = usePostHog();
 
   const [emailAddress, setEmailAddress] = React.useState('');
   const [password, setPassword] = React.useState('');
@@ -38,7 +40,9 @@ export default function SignUp() {
       });
 
       if (result && result.error) {
-        setErrorMsg(result.error.message || 'An error occurred during sign up.');
+        const message = result.error.message || 'An error occurred during sign up.';
+        setErrorMsg(message);
+        posthog.capture('sign_up_failed', { error_message: message, step: 'create' });
         return;
       }
 
@@ -46,7 +50,9 @@ export default function SignUp() {
       setPendingVerification(true);
     } catch (err: any) {
       console.error(JSON.stringify(err, null, 2));
-      setErrorMsg(err.errors?.[0]?.message || 'An error occurred.');
+      const message = err.errors?.[0]?.message || 'An error occurred.';
+      setErrorMsg(message);
+      posthog.capture('sign_up_failed', { error_message: message, step: 'create' });
     } finally {
       setLoading(false);
     }
@@ -57,26 +63,38 @@ export default function SignUp() {
     setLoading(true);
     setErrorMsg('');
 
+    posthog.capture('email_verification_submitted');
+
     try {
       const result = await signUp.verifications.verifyEmailCode({
         code,
       });
 
       if (result && result.error) {
-        setErrorMsg(result.error.message || 'Verification failed.');
+        const message = result.error.message || 'Verification failed.';
+        setErrorMsg(message);
+        posthog.capture('sign_up_failed', { error_message: message, step: 'verify' });
         return;
       }
 
       if (signUp.status === 'complete') {
         await signUp.finalize();
+        posthog.identify(emailAddress, {
+          email: emailAddress,
+          $set_once: { first_sign_up_date: new Date().toISOString() },
+        });
+        posthog.capture('user_signed_up');
         router.replace('/(tabs)');
       } else {
         console.error(JSON.stringify(signUp, null, 2));
         setErrorMsg('Verification failed.');
+        posthog.capture('sign_up_failed', { error_message: 'Verification failed.', step: 'verify' });
       }
     } catch (err: any) {
       console.error(JSON.stringify(err, null, 2));
-      setErrorMsg(err.errors?.[0]?.message || 'An error occurred.');
+      const message = err.errors?.[0]?.message || 'An error occurred.';
+      setErrorMsg(message);
+      posthog.capture('sign_up_failed', { error_message: message, step: 'verify' });
     } finally {
       setLoading(false);
     }
