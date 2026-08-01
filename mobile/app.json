@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "Renovo",
+    "slug": "renovo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/assets/icons/logo.png",
+    "scheme": "renovo",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "com.mearslanahmed.renovo",
+      "supportsTablet":   true
+    },
+    "android": {
+      "package": "com.mearslanahmed.renovo",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/assets/images/android-icon-monochrome.png"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "@clerk/expo",
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/assets/images/splash-pattern.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff",
+          "dark": {
+            "backgroundColor": "#000000"
+          }
+        }
+      ],
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/assets/fonts/PlusJakartaSans-Regular.ttf",
+            "./assets/assets/fonts/PlusJakartaSans-Bold.ttf",
+            "./assets/assets/fonts/PlusJakartaSans-SemiBold.ttf",
+            "./assets/assets/fonts/PlusJakartaSans-Medium.ttf",
+            "./assets/assets/fonts/PlusJakartaSans-ExtraBold.ttf",
+            "./assets/assets/fonts/PlusJakartaSans-Light.ttf"
+          ]
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
