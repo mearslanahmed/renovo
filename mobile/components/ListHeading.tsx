@@ -5,10 +5,6 @@ const ListHeading = ({title}: ListHeadingProps) => {
   return (
     <View className="list-head">
       <Text className="list-title">{title}</Text>
-
-      <TouchableOpacity>
-        <Text className="list-action-text">View All</Text>
-      </TouchableOpacity>
     </View>
   )
 }

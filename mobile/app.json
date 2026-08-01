@@ -1,17 +1,19 @@
 {
   "expo": {
-    "name": "renovo",
+    "name": "Renovo",
     "slug": "renovo",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/assets/images/icon.png",
+    "icon": "./assets/assets/icons/logo.png",
     "scheme": "renovo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "com.mearslanahmed.renovo",
+      "supportsTablet":   true
     },
     "android": {
+      "package": "com.mearslanahmed.renovo",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/assets/images/android-icon-foreground.png",
@@ -32,7 +34,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/assets/images/splash-icon.png",
+          "image": "./assets/assets/images/splash-pattern.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",

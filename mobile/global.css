@@ -432,4 +432,44 @@
   .category-chip-text-active {
     @apply text-accent;
   }
+
+  .settings-avatar-wrap {
+    @apply items-center mt-4;
+  }
+  .settings-avatar {
+    @apply size-24 rounded-full border-4 border-white shadow-sm;
+  }
+  .settings-name {
+    @apply mt-4 text-2xl font-sans-bold text-primary;
+  }
+  .settings-email {
+    @apply mt-1 text-sm font-sans-semibold text-muted-foreground;
+  }
+  .settings-section {
+    @apply mt-6 overflow-hidden rounded-3xl border border-black/5 bg-card;
+  }
+  .settings-row {
+    @apply flex-row items-center justify-between border-b border-black/5 p-4;
+  }
+  .settings-row-left {
+    @apply flex-row items-center gap-4;
+  }
+  .settings-icon-wrap {
+    @apply size-12 items-center justify-center rounded-2xl bg-background;
+  }
+  .settings-icon {
+    @apply size-6;
+  }
+  .settings-label {
+    @apply text-base font-sans-bold text-primary;
+  }
+  .settings-value {
+    @apply text-base font-sans-semibold text-muted-foreground;
+  }
+  .settings-logout {
+    @apply mt-8 mb-28 items-center rounded-3xl bg-destructive/10 py-5;
+  }
+  .settings-logout-text {
+    @apply text-lg font-sans-bold text-destructive;
+  }
 }

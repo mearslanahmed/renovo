@@ -99,7 +99,6 @@ export default function CreateSubscriptionModal({
       subscription_category: category,
     });
 
-
     handleClose();
   };
 

@@ -14,7 +14,7 @@ import "@/global.css";
 import { formatCurrency } from "@/lib/utils";
 import dayjs from "dayjs";
 import { styled } from "nativewind";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { FlatList, Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 import { usePostHog } from "posthog-react-native";
@@ -29,6 +29,26 @@ export default function App() {
   const { subscriptions, addSubscription } = useSubscriptions();
   const [isModalVisible, setModalVisible] = useState(false);
   const posthog = usePostHog();
+
+  const upcomingSubscriptions = useMemo(() => {
+    const today = dayjs().startOf("day");
+    return subscriptions
+      .filter((sub) => sub.status === "active" && sub.renewalDate)
+      .map((sub) => {
+        const renewal = dayjs(sub.renewalDate).startOf("day");
+        const daysLeft = renewal.diff(today, "day");
+        return {
+          id: sub.id,
+          icon: sub.icon,
+          name: sub.name,
+          price: sub.price,
+          currency: sub.currency,
+          daysLeft,
+        };
+      })
+      .filter((sub) => sub.daysLeft >= 0)
+      .sort((a, b) => a.daysLeft - b.daysLeft);
+  }, [subscriptions]);
 
   return (
     <SafeAreaView className="flex-1 bg-background p-5">
@@ -46,8 +66,9 @@ export default function App() {
                   setModalVisible(true);
                 }}
                 testID="add-subscription-button"
+                className="size-12 items-center justify-center rounded-full border border-black/10 bg-background"
               >
-                <Image source={icons.add} className="home-add-icon" />
+                <Image source={icons.plus} className="size-6" style={{ tintColor: "#081126" }} />
               </Pressable>
             </View>
 
@@ -67,7 +88,7 @@ export default function App() {
             <View className="mb-5">
               <ListHeading title="Upcoming" />
               <FlatList
-                data={UPCOMING_SUBSCRIPTIONS}
+                data={upcomingSubscriptions}
                 renderItem={({ item }) => (
                   <UpcomingSubscriptionCard {...item} />
                 )}

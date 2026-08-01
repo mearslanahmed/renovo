@@ -23,7 +23,7 @@ const UpcomingSubscriptionCard = ({
               : daysLeft === 1
                 ? "1 day left"
                 : daysLeft === 0
-                  ? "Renewal today"
+                  ? "Today"
                   : "Overdue"}
           </Text>
         </View>
