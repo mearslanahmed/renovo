@@ -16,10 +16,10 @@ const userSchema = new mongoose.Schema({
         lowercase: true,
         match: [/\S+@\S+\.\S+/, 'User Email is invalid'],
     },
-    password: {
+    clerkId: {
         type: String,
-        required: [true, 'User Password is required'],
-        minLength: [6, 'User Password must be at least 6 characters long'],
+        required: [true, 'Clerk ID is required'],
+        unique: true,
     }
 }, {timestamps: true});
 

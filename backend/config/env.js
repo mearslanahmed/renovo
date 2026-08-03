@@ -15,4 +15,5 @@ export const {
   SERVER_URL,
   EMAIL,
   EMAIL_PASSWORD,
+  CLERK_WEBHOOK_SECRET,
 } = process.env;
