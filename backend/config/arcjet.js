@@ -9,10 +9,10 @@ const aj = arcjet({
   characteristics: ["ip.src"],
   rules: [
     shield({ mode: arcjetMode }),
-    detectBot({
-      mode: arcjetMode,
-      allow: ["CATEGORY:SEARCH_ENGINE"],
-    }),
+    // detectBot({
+    //   mode: arcjetMode,
+    //   allow: ["CATEGORY:SEARCH_ENGINE"],
+    // }),
 
     tokenBucket({
       mode: arcjetMode,
