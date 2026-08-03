@@ -7,8 +7,8 @@ const SubscriptionCard = ({
   name,
   price,
   currency,
+  frequency,
   icon,
-  billing,
   color,
   category,
   plan,
@@ -42,7 +42,7 @@ const SubscriptionCard = ({
 
         <View className="sub-price-box">
           <Text className="sub-price">{formatCurrency(price, currency)}</Text>
-          <Text className="sub-billing">{billing}</Text>
+          <Text className="sub-frequency">{frequency}</Text>
         </View>
       </View>
 
