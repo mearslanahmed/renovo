@@ -52,7 +52,7 @@ export default function RootLayout() {
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
       <PostHogProvider
         client={posthog}
-        debug={__DEV__}
+        debug={false}
         autocapture={{
           captureScreens: false,
           captureTouches: true,

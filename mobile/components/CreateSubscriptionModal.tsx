@@ -18,7 +18,7 @@ import { posthog } from "@/lib/posthog";
 export interface CreateSubscriptionModalProps {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (subscription: Subscription) => void;
+  onSubmit: (subscription: any) => void;
 }
 
 const CATEGORIES = [
@@ -74,20 +74,17 @@ export default function CreateSubscriptionModal({
         ? dayjs().add(1, "month").toISOString()
         : dayjs().add(1, "year").toISOString();
 
-    const newSubscription: Subscription = {
-      id: `sub_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+    const newSubscription: any = {
       name: name.trim(),
       price: parsedPrice,
-      billing: frequency,
-      category,
+      frequency: frequency.toLowerCase(),
+      category: category.toLowerCase(),
       color: CATEGORY_COLORS[category] || CATEGORY_COLORS["Other"],
       status: "active",
       startDate,
-      renewalDate,
       icon: icons.wallet,
       currency: "USD",
       paymentMethod: "Visa ending in 0000",
-      plan: `${frequency} Plan`,
     };
 
     onSubmit(newSubscription);
