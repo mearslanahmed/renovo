@@ -85,30 +85,12 @@ export default function SubscriptionIcon({
     }
   }
 
-  // 5. Scalable Fallback: Letter Avatar Badge with brand color
-  const initial = name ? name.trim().charAt(0).toUpperCase() : "?";
-  const fontSize = Math.floor(size * 0.45);
-
+  // 5. Default Fallback Icon: Wallet icon tinted dark #081126
   return (
-    <View
-      style={{
-        width: size,
-        height: size,
-        borderRadius: size / 2,
-        backgroundColor: color || "#3b82f6",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Text
-        style={{
-          color: "#ffffff",
-          fontSize,
-          fontWeight: "700",
-        }}
-      >
-        {initial}
-      </Text>
-    </View>
+    <Image
+      source={icons.wallet}
+      className={className}
+      style={{ tintColor: "#081126" }}
+    />
   );
 }

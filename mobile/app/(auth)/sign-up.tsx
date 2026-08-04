@@ -73,7 +73,6 @@ export default function SignUp() {
 
       setPendingVerification(true);
     } catch (err: any) {
-      console.error('Clerk Create Error:', err);
       const message = err.errors?.[0]?.message || err.message || 'An error occurred.';
       setErrorMsg(message);
       posthog.capture('sign_up_failed', { error_message: message, step: 'create' });
@@ -117,12 +116,10 @@ export default function SignUp() {
         posthog.capture('user_signed_up');
         // The AuthLayout will automatically redirect to /(tabs) when isSignedIn becomes true
       } else {
-        console.error("Sign up incomplete. Status:", signUp.status);
         setErrorMsg(`Verification incomplete (Status: ${signUp.status})`);
         posthog.capture('sign_up_failed', { error_message: `Incomplete status: ${signUp.status}`, step: 'verify' });
       }
     } catch (err: any) {
-      console.error('Clerk Verify Error:', err);
       const message = err.errors?.[0]?.message || err.message || 'An error occurred.';
       setErrorMsg(message);
       posthog.capture('sign_up_failed', { error_message: message, step: 'verify' });

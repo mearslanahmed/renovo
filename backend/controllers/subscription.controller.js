@@ -74,9 +74,15 @@ export const getSubscription = async (req, res, next) => {
 
 export const updateSubscription = async (req, res, next) => {
   try {
+    const updateData = { ...req.body };
+
+    if (updateData.renewalDate === "" || updateData.renewalDate === null) {
+      delete updateData.renewalDate;
+    }
+
     const subscription = await Subscription.findOneAndUpdate(
       { _id: req.params.id, user: req.user._id },
-      req.body,
+      updateData,
       { new: true, runValidators: true },
     );
 

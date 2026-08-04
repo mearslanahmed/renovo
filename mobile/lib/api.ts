@@ -13,15 +13,12 @@ export const fetchSubscriptions = async (token: string | null) => {
     });
     
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`API Error (${response.status}):`, errorText);
       throw new Error(`Failed to fetch subscriptions: ${response.status}`);
     }
     
     const data = await response.json();
-    return data.data; // Our backend returns { success: true, data: [...] }
+    return data.data;
   } catch (error) {
-    console.error('Error fetching subscriptions:', error);
     return [];
   }
 };
@@ -41,7 +38,6 @@ export const createSubscription = async (token: string | null, subscriptionData:
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Create Subscription API Error (${response.status}):`, errorText);
       let errorMessage = 'Failed to create subscription';
       try {
         const errorJson = JSON.parse(errorText);
@@ -56,7 +52,6 @@ export const createSubscription = async (token: string | null, subscriptionData:
     const sub = data.data?.subscription || data.data;
     return sub;
   } catch (error) {
-    console.error('Error creating subscription:', error);
     throw error;
   }
 };
@@ -75,15 +70,12 @@ export const updateSubscription = async (token: string | null, id: string, subsc
     });
     
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Update Subscription API Error (${response.status}):`, errorText);
       throw new Error('Failed to update subscription');
     }
     
     const data = await response.json();
     return data.data;
   } catch (error) {
-    console.error('Error updating subscription:', error);
     throw error;
   }
 };
@@ -101,15 +93,12 @@ export const deleteSubscription = async (token: string | null, id: string) => {
     });
     
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Delete Subscription API Error (${response.status}):`, errorText);
       throw new Error('Failed to delete subscription');
     }
     
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('Error deleting subscription:', error);
     throw error;
   }
 };

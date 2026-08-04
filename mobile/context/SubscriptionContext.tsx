@@ -32,14 +32,14 @@ function resolveIcon(name?: string): ImageSourcePropType {
 
 const CATEGORY_COLOR_MAP: Record<string, string> = {
   entertainment: "#f5a2a2",
-  music: "#d0a2f5",
-  "ai tools": "#b8d4e3",
-  ai: "#b8d4e3",
-  "developer tools": "#e8def8",
-  design: "#f5c542",
   productivity: "#b8e8d0",
+  education: "#e8def8",
+  health: "#b8e8d0",
+  finance: "#f5c542",
+  ai: "#b8d4e3",
+  music: "#d0a2f5",
   cloud: "#a2c4f5",
-  other: "#e0e0e0",
+  other: "#fff8e7",
 };
 
 function resolveColor(item: any): string {
@@ -56,7 +56,7 @@ function resolveColor(item: any): string {
   if (nameKey.includes("dropbox")) return "#a2c4f5";
 
   const catKey = item.category ? item.category.toLowerCase().trim() : "other";
-  return CATEGORY_COLOR_MAP[catKey] || "#e0e0e0";
+  return CATEGORY_COLOR_MAP[catKey] || "#fff8e7";
 }
 
 interface SubscriptionContextType {
@@ -64,6 +64,7 @@ interface SubscriptionContextType {
   addSubscription: (sub: Omit<Subscription, 'id'>) => Promise<void>;
   updateSubscription: (id: string, sub: Partial<Subscription>) => Promise<void>;
   deleteSubscription: (id: string) => Promise<void>;
+  refreshSubscriptions: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -92,7 +93,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           
           setSubscriptions(mappedData);
         } catch (error) {
-          console.error("Failed to load subscriptions", error);
+          // Silent catch
         } finally {
           setIsLoading(false);
         }
@@ -117,7 +118,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       
       setSubscriptions((prev) => [mappedSub, ...prev]);
     } catch (error) {
-      console.error("Failed to add subscription", error);
       throw error;
     }
   };
@@ -138,7 +138,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         prev.map((item) => (item.id === id ? { ...item, ...mappedSub } : item))
       );
     } catch (error) {
-      console.error("Failed to update subscription", error);
       throw error;
     }
   };
@@ -149,8 +148,25 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       await apiDeleteSubscription(token, id);
       setSubscriptions((prev) => prev.filter((item) => item.id !== id));
     } catch (error) {
-      console.error("Failed to delete subscription", error);
       throw error;
+    }
+  };
+
+  const refreshSubscriptions = async () => {
+    if (isLoaded && isSignedIn) {
+      try {
+        const token = await getToken();
+        const data = await fetchSubscriptions(token);
+        const mappedData = data.map((item: any) => ({
+          ...item,
+          id: item._id,
+          icon: item.icon || resolveIcon(item.name),
+          color: resolveColor(item),
+        }));
+        setSubscriptions(mappedData);
+      } catch (error) {
+        // Silent catch
+      }
     }
   };
 
@@ -161,6 +177,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         addSubscription,
         updateSubscription,
         deleteSubscription,
+        refreshSubscriptions,
         isLoading,
       }}
     >

@@ -5,15 +5,7 @@ const projectToken = Constants.expoConfig?.extra?.posthogProjectToken as string 
 const host = (Constants.expoConfig?.extra?.posthogHost as string) || 'https://us.i.posthog.com'
 const isPostHogConfigured = Boolean(projectToken && projectToken !== 'phc_your_project_token_here')
 
-if (__DEV__) {
-  if (!isPostHogConfigured) {
-    console.error(
-      'POSTHOG_PROJECT_TOKEN variable required by PostHog is missing or un-configured, ' +
-        'this causes events to be silently missed. ' +
-        'This error stops appearing once POSTHOG_PROJECT_TOKEN is configured'
-    )
-  }
-}
+
 
 export const posthog = new PostHog(projectToken || 'placeholder_key', {
   host,

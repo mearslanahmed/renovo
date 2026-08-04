@@ -26,19 +26,31 @@ const SubscriptionCard = ({
 }: SubscriptionCardProps) => {
   const { currency: preferredCurrency } = useCurrency();
 
+  const normalizedStatus = (status || "active").toLowerCase();
+  const statusLabel = normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1);
+
+  const cardColor = color || "#fff8e7";
+
   return (
     <Pressable
       onPress={onPress}
-      className={clsx("sub-card", expanded && "sub-card-expanded", (!color || expanded) && "bg-card")}
-      style={!expanded && color ? { backgroundColor: color } : undefined}
+      className={clsx("sub-card", expanded && "border-primary/30 shadow-md")}
+      style={{ backgroundColor: cardColor }}
     >
       <View className="sub-head">
         <View className="sub-main">
           <SubscriptionIcon name={name} icon={icon} color={color} className="sub-icon" size={40} />
-          <View className="sub-copy">
-            <Text numberOfLines={1} className="sub-title">
-              {name}
-            </Text>
+          <View className="sub-copy flex-1">
+            <View className="flex-row items-center gap-2 pr-2">
+              <Text numberOfLines={1} className="sub-title shrink">
+                {name}
+              </Text>
+              <View className="px-2 py-0.5 rounded-full bg-black/10 border border-black/10">
+                <Text className="text-[10px] font-sans-bold uppercase text-primary">
+                  {statusLabel}
+                </Text>
+              </View>
+            </View>
             <Text numberOfLines={1} ellipsizeMode="tail" className="sub-meta">
               {category?.trim() ||
                 plan?.trim() ||
@@ -88,9 +100,11 @@ const SubscriptionCard = ({
 
             <View className="sub-row">
               <Text className="sub-label">Status:</Text>
-              <Text numberOfLines={1} className="sub-value">
-                {status?.trim() || "Not set"}
-              </Text>
+              <View className="px-2.5 py-0.5 rounded-full bg-black/10 border border-black/10">
+                <Text className="text-xs font-sans-bold uppercase text-primary">
+                  {statusLabel}
+                </Text>
+              </View>
             </View>
 
             {(onEditPress || onDeletePress) && (
