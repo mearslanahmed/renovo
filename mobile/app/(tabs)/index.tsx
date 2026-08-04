@@ -4,7 +4,6 @@ import SubscriptionCard from "@/components/SubscriptionCard";
 import CreateSubscriptionModal from "@/components/CreateSubscriptionModal";
 import UpcomingSubscriptionCard from "@/components/UpcomingSubscriptionCard";
 import { icons } from "@/constants/icons";
-import images from "@/constants/images";
 import "@/global.css";
 import { formatCurrency } from "@/lib/utils";
 import dayjs from "dayjs";
@@ -18,26 +17,22 @@ import {
   Text,
   View,
   Alert,
-  TextInput,
   RefreshControl,
-  ScrollView,
 } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 import { usePostHog } from "posthog-react-native";
+import { useRouter } from "expo-router";
 import { useSubscriptions } from "@/context/SubscriptionContext";
 import { useCurrency } from "@/context/CurrencyContext";
 import UserAvatar from "@/components/UserAvatar";
-import { Ionicons } from "@expo/vector-icons";
-import { clsx } from "clsx";
 
 const SafeAreaView = styled(RNSafeAreaView);
 
 const ItemSeparator = () => <View className="h-3" />;
 
-const FILTER_CATEGORIES = ["All", "Entertainment", "Productivity", "Education", "Health", "Finance", "AI", "Other"];
-
 export default function App() {
   const { user } = useUser();
+  const router = useRouter();
   const { currency: preferredCurrency } = useCurrency();
   const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<string | null>(null);
   const {
@@ -50,8 +45,6 @@ export default function App() {
   const [isModalVisible, setModalVisible] = useState(false);
   const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("All");
   const posthog = usePostHog();
 
   const handleRefresh = async () => {
@@ -114,18 +107,12 @@ export default function App() {
     return "--/--";
   }, [subscriptions]);
 
-  const filteredSubscriptions = useMemo(() => {
-    return subscriptions.filter((sub) => {
-      const matchesSearch = sub.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase().trim());
-      const subCat = (sub.category || "other").toLowerCase();
-      const matchesCategory =
-        selectedCategoryFilter === "All" ||
-        subCat === selectedCategoryFilter.toLowerCase();
-      return matchesSearch && matchesCategory;
-    });
-  }, [subscriptions, searchQuery, selectedCategoryFilter]);
+  // Show up to 4 recent active subscriptions on Home screen dashboard
+  const recentSubscriptions = useMemo(() => {
+    return subscriptions
+      .filter((sub) => sub.status === "active")
+      .slice(0, 4);
+  }, [subscriptions]);
 
   const emailUsername = user?.primaryEmailAddress?.emailAddress
     ? user.primaryEmailAddress.emailAddress.split("@")[0]
@@ -149,7 +136,7 @@ export default function App() {
         }
         ListHeaderComponent={
           <>
-            {/* Header with Avatar and Add Button */}
+            {/* Greeting Header */}
             <View className="home-header">
               <View className="home-user">
                 <UserAvatar size={48} className="home-avatar" />
@@ -167,7 +154,7 @@ export default function App() {
               </Pressable>
             </View>
 
-            {/* Main Expenses Balance Card */}
+            {/* Monthly Expenses Balance Card */}
             <View className="home-balance-card shadow-sm">
               <Text className="home-balance-label">Monthly Expenses</Text>
 
@@ -183,7 +170,7 @@ export default function App() {
               </View>
             </View>
 
-            {/* Upcoming Renewals Carousel */}
+            {/* Upcoming Renewals Carousel (Next 7 Days) */}
             {upcomingSubscriptions.length > 0 && (
               <View className="mb-5">
                 <ListHeading title="Upcoming (Next 7 Days)" />
@@ -197,64 +184,20 @@ export default function App() {
               </View>
             )}
 
-            {/* Search Bar */}
-            <View className="mb-3 flex-row items-center rounded-2xl bg-card border border-black/10 px-4 py-2.5 shadow-sm">
-              <Ionicons name="search-outline" size={18} color="#666666" className="mr-2" />
-              <TextInput
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                placeholder="Search subscriptions..."
-                placeholderTextColor="#888888"
-                className="flex-1 font-sans-medium text-sm text-primary py-1"
+            {/* Recent Subscriptions Header with View All Link */}
+            <View className="mb-3">
+              <ListHeading
+                title="Recent Subscriptions"
+                actionText="View All"
+                onActionPress={() => {
+                  posthog.capture("view_all_subscriptions_tapped");
+                  router.push("/(tabs)/subscriptions");
+                }}
               />
-              {searchQuery.length > 0 && (
-                <Pressable onPress={() => setSearchQuery("")}>
-                  <Ionicons name="close-circle" size={18} color="#888888" />
-                </Pressable>
-              )}
-            </View>
-
-            {/* Category Filter Chips */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              className="mb-4"
-            >
-              {FILTER_CATEGORIES.map((cat) => {
-                const isSelected = selectedCategoryFilter === cat;
-                return (
-                  <Pressable
-                    key={cat}
-                    onPress={() => setSelectedCategoryFilter(cat)}
-                    className={clsx(
-                      "mr-2 px-3.5 py-1.5 rounded-full border",
-                      isSelected
-                        ? "bg-primary border-primary"
-                        : "bg-card border-black/10"
-                    )}
-                  >
-                    <Text
-                      className={clsx(
-                        "text-xs font-sans-semibold",
-                        isSelected ? "text-white" : "text-primary"
-                      )}
-                    >
-                      {cat}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-
-            <View className="flex-row items-center justify-between mb-3">
-              <ListHeading title="All Subscriptions" />
-              <Text className="text-xs font-sans-bold text-muted-foreground bg-black/5 px-2.5 py-1 rounded-full">
-                {filteredSubscriptions.length} {filteredSubscriptions.length === 1 ? "sub" : "subs"}
-              </Text>
             </View>
           </>
         }
-        data={filteredSubscriptions}
+        data={recentSubscriptions}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <SubscriptionCard
@@ -301,14 +244,11 @@ export default function App() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View className="items-center justify-center py-10 rounded-3xl bg-card border border-black/10 p-5 mt-2">
-            <Ionicons name="layers-outline" size={36} color="#888888" className="mb-2" />
             <Text className="text-base font-sans-bold text-primary mb-1">
-              No Subscriptions Found
+              No Subscriptions Yet
             </Text>
             <Text className="text-xs font-sans-medium text-muted-foreground text-center">
-              {searchQuery || selectedCategoryFilter !== "All"
-                ? "No subscriptions match your search or filter criteria."
-                : "Tap the + button above to add your first subscription!"}
+              Tap the + button above to add your first subscription!
             </Text>
           </View>
         }
