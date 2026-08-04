@@ -10,6 +10,7 @@ import { formatCurrency } from "@/lib/utils";
 import dayjs from "dayjs";
 import ListHeading from "@/components/ListHeading";
 import { useSubscriptions } from "@/context/SubscriptionContext";
+import SubscriptionIcon from "@/components/SubscriptionIcon";
 
 const SafeAreaView = styled(RNSafeAreaView);
 
@@ -147,7 +148,7 @@ const Insights = () => {
           >
             <View className="flex-row items-center gap-4">
               <View className="size-14 items-center justify-center rounded-2xl bg-white/30">
-                <Image source={item.icon} className="size-8" />
+                <SubscriptionIcon name={item.name} icon={item.icon} color={item.color} className="size-8" size={32} />
               </View>
               <View>
                 <Text className="text-lg font-sans-bold text-primary">

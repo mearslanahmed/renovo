@@ -26,7 +26,23 @@ const subscriptionSchema = new mongoose.Schema({
     category: {
         type: String,
         enum: ['entertainment', 'productivity', 'education', 'health', 'finance', 'ai', 'other'],
-        required: true,
+        default: 'other',
+        lowercase: true,
+        trim: true,
+    },
+    plan: {
+        type: String,
+        trim: true,
+    },
+    icon: {
+        type: String,
+        trim: true,
+        default: 'default',
+    },
+    color: {
+        type: String,
+        trim: true,
+        default: '#e0e0e0',
     },
     paymentMethod: {
         type: String,
@@ -42,8 +58,8 @@ const subscriptionSchema = new mongoose.Schema({
         type: Date,
         required: true,
         validate: {
-            validator: (value) => value <= new Date(),
-            message: 'Start date must be in past',
+            validator: (value) => value <= new Date(Date.now() + 60000),
+            message: 'Start date cannot be in the future',
         }
     },
     renewalDate: {
@@ -84,6 +100,6 @@ subscriptionSchema.pre('save', function () {
     }
 });
 
-const Subscription = mongoose.model('Subscription', subscriptionSchema);
+const Subscription = mongoose.models.Subscription || mongoose.model('Subscription', subscriptionSchema);
 
 export default Subscription;

@@ -1,19 +1,19 @@
 import React, { useState, useMemo } from "react";
-import { FlatList, Text, TextInput, View, KeyboardAvoidingView, Platform } from "react-native";
+import { FlatList, Text, TextInput, View, KeyboardAvoidingView, Platform, Alert } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 import { styled } from "nativewind";
 import { Ionicons } from "@expo/vector-icons";
-import { HOME_SUBSCRIPTIONS } from "@/constants/data";
 import SubscriptionCard from "@/components/SubscriptionCard";
+import EditSubModal from "@/components/EditSubscriptionModal";
 import { useSubscriptions } from "@/context/SubscriptionContext";
-import { clsx } from "clsx";
 
 const SafeAreaView = styled(RNSafeAreaView);
 
 const Subscriptions = () => {
-  const { subscriptions } = useSubscriptions();
+  const { subscriptions, updateSubscription, deleteSubscription } = useSubscriptions();
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null);
 
   const filteredSubscriptions = useMemo(() => {
     if (!searchQuery.trim()) return subscriptions;
@@ -67,6 +67,29 @@ const Subscriptions = () => {
               onPress={() =>
                 setExpandedId((prev) => (prev === item.id ? null : item.id))
               }
+              onEditPress={() => {
+                setEditingSubscription(item);
+              }}
+              onDeletePress={() => {
+                Alert.alert(
+                  "Delete Subscription",
+                  `Are you sure you want to delete ${item.name}?`,
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Delete",
+                      style: "destructive",
+                      onPress: async () => {
+                        try {
+                          await deleteSubscription(item.id);
+                        } catch (err) {
+                          console.error("Delete error:", err);
+                        }
+                      },
+                    },
+                  ]
+                );
+              }}
             />
           </View>
         )}
@@ -81,6 +104,14 @@ const Subscriptions = () => {
         )}
       />
       </KeyboardAvoidingView>
+      <EditSubModal
+        visible={!!editingSubscription}
+        subscription={editingSubscription}
+        onClose={() => setEditingSubscription(null)}
+        onSubmit={async (id, updatedData) => {
+          await updateSubscription(id, updatedData);
+        }}
+      />
     </SafeAreaView>
   );
 };

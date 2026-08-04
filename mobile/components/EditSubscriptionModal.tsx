@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   View,
@@ -8,17 +8,16 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { clsx } from "clsx";
-import dayjs from "dayjs";
-import { icons } from "@/constants/icons";
-import { posthog } from "@/lib/posthog";
 
-export interface CreateSubscriptionModalProps {
+export interface EditSubscriptionModalProps {
   visible: boolean;
+  subscription: Subscription | null;
   onClose: () => void;
-  onSubmit: (subscription: any) => void;
+  onSubmit: (id: string, updatedData: any) => Promise<void>;
 }
 
 const CATEGORIES = [
@@ -54,83 +53,69 @@ const BACKEND_CATEGORY_MAP: Record<string, string> = {
   Other: "other",
 };
 
-const POPULAR_PRESETS = [
-  { name: "Netflix", category: "Entertainment", icon: "netflix", color: "#f5a2a2", defaultPrice: "15.99" },
-  { name: "Spotify", category: "Music", icon: "spotify", color: "#d0a2f5", defaultPrice: "10.99" },
-  { name: "ChatGPT", category: "AI Tools", icon: "openai", color: "#b8d4e3", defaultPrice: "20.00" },
-  { name: "GitHub Pro", category: "Developer Tools", icon: "github", color: "#e8def8", defaultPrice: "4.00" },
-  { name: "Adobe CC", category: "Design", icon: "adobe", color: "#f5c542", defaultPrice: "54.99" },
-  { name: "Canva Pro", category: "Design", icon: "canva", color: "#b8e8d0", defaultPrice: "12.99" },
-  { name: "Claude Pro", category: "AI Tools", icon: "claude", color: "#b8d4e3", defaultPrice: "20.00" },
-  { name: "Notion", category: "Productivity", icon: "notion", color: "#b8e8d0", defaultPrice: "10.00" },
-  { name: "Dropbox", category: "Cloud", icon: "dropbox", color: "#a2c4f5", defaultPrice: "11.99" },
+const STATUS_OPTIONS: Array<"active" | "canceled" | "expired"> = [
+  "active",
+  "canceled",
+  "expired",
 ];
 
-export default function CreateSubscriptionModal({
+export default function EditSubscriptionModal({
   visible,
+  subscription,
   onClose,
   onSubmit,
-}: CreateSubscriptionModalProps) {
+}: EditSubscriptionModalProps) {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [frequency, setFrequency] = useState<"Monthly" | "Yearly">("Monthly");
   const [category, setCategory] = useState("Other");
-  const [selectedIconKey, setSelectedIconKey] = useState<string | null>(null);
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [status, setStatus] = useState<"active" | "canceled" | "expired">("active");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (subscription) {
+      setName(subscription.name || "");
+      setPrice(subscription.price ? String(subscription.price) : "");
+      setFrequency(
+        subscription.frequency?.toLowerCase() === "yearly" ? "Yearly" : "Monthly"
+      );
+      // Map category back to display string if possible
+      const cat = subscription.category || "other";
+      const displayCat =
+        CATEGORIES.find((c) => c.toLowerCase() === cat || BACKEND_CATEGORY_MAP[c] === cat) ||
+        "Other";
+      setCategory(displayCat);
+      setStatus((subscription.status as any) || "active");
+    }
+  }, [subscription]);
 
   const isFormValid = name.trim().length > 0 && parseFloat(price) > 0;
 
-  const handleSelectPreset = (preset: typeof POPULAR_PRESETS[0]) => {
-    setName(preset.name);
-    setCategory(preset.category);
-    setSelectedIconKey(preset.icon);
-    setSelectedColor(preset.color);
-    if (!price) setPrice(preset.defaultPrice);
-  };
+  const handleSubmit = async () => {
+    if (!isFormValid || !subscription) return;
 
-  const handleClose = () => {
-    // Reset state before closing
-    setName("");
-    setPrice("");
-    setFrequency("Monthly");
-    setCategory("Other");
-    setSelectedIconKey(null);
-    setSelectedColor(null);
-    onClose();
-  };
+    setLoading(true);
+    try {
+      const parsedPrice = parseFloat(price);
+      const normalizedCategory = BACKEND_CATEGORY_MAP[category] || "other";
 
-  const handleSubmit = () => {
-    if (!isFormValid) return;
+      const updatedData: any = {
+        name: name.trim(),
+        price: parsedPrice,
+        frequency: frequency.toLowerCase(),
+        category: normalizedCategory,
+        plan: category,
+        color: CATEGORY_COLORS[category] || CATEGORY_COLORS["Other"],
+        status,
+      };
 
-    const parsedPrice = parseFloat(price);
-    const startDate = dayjs().toISOString();
-
-    const normalizedCategory = BACKEND_CATEGORY_MAP[category] || "other";
-
-    const newSubscription: any = {
-      name: name.trim(),
-      price: parsedPrice,
-      frequency: frequency.toLowerCase(),
-      category: normalizedCategory,
-      plan: category,
-      color: selectedColor || CATEGORY_COLORS[category] || CATEGORY_COLORS["Other"],
-      icon: selectedIconKey || name.trim().toLowerCase(),
-      status: "active",
-      startDate,
-      currency: "USD",
-      paymentMethod: "Visa ending in 0000",
-    };
-
-    onSubmit(newSubscription);
-    
-    posthog.capture('subscription_created', {
-      subscription_name: name.trim(),
-      subscription_price: parsedPrice,
-      subscription_frequency: frequency,
-      subscription_category: category,
-    });
-
-    handleClose();
+      await onSubmit(subscription.id, updatedData);
+      onClose();
+    } catch (err) {
+      console.error("Failed to submit edit:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -138,19 +123,19 @@ export default function CreateSubscriptionModal({
       visible={visible}
       animationType="slide"
       transparent={true}
-      onRequestClose={handleClose}
+      onRequestClose={onClose}
     >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View className="modal-overlay">
-          <Pressable style={{ flex: 1 }} onPress={handleClose} />
+          <Pressable style={{ flex: 1 }} onPress={onClose} />
 
           <View className="modal-container">
             <View className="modal-header">
-              <Text className="modal-title">New Subscription</Text>
-              <Pressable className="modal-close" onPress={handleClose}>
+              <Text className="modal-title">Edit Subscription</Text>
+              <Pressable className="modal-close" onPress={onClose}>
                 <Ionicons name="close" size={20} color="#081126" />
               </Pressable>
             </View>
@@ -160,43 +145,14 @@ export default function CreateSubscriptionModal({
               contentContainerStyle={{ paddingBottom: 40 }}
             >
               <View className="modal-body">
-                {/* Popular Services Quick Select */}
-                <View className="auth-field">
-                  <Text className="auth-label">Quick Select Platform</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row py-1">
-                    {POPULAR_PRESETS.map((preset) => (
-                      <Pressable
-                        key={preset.name}
-                        onPress={() => handleSelectPreset(preset)}
-                        className={clsx(
-                          "mr-2 px-3 py-1.5 rounded-full border border-black/10 flex-row items-center",
-                          name === preset.name ? "bg-black" : "bg-white"
-                        )}
-                      >
-                        <Text
-                          className={clsx(
-                            "text-xs font-sans-medium",
-                            name === preset.name ? "text-white" : "text-black"
-                          )}
-                        >
-                          {preset.name}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </ScrollView>
-                </View>
-
                 {/* Name Input */}
                 <View className="auth-field">
                   <Text className="auth-label">Name</Text>
                   <View className="auth-input-wrap">
                     <TextInput
                       value={name}
-                      onChangeText={(text) => {
-                        setName(text);
-                        setSelectedIconKey(null);
-                      }}
-                      placeholder="e.g. Netflix"
+                      onChangeText={setName}
+                      placeholder="Subscription Name"
                       placeholderTextColor="#666666"
                       className="auth-input-inner"
                     />
@@ -257,6 +213,32 @@ export default function CreateSubscriptionModal({
                   </View>
                 </View>
 
+                {/* Status Toggles */}
+                <View className="auth-field">
+                  <Text className="auth-label">Status</Text>
+                  <View className="picker-row">
+                    {STATUS_OPTIONS.map((st) => (
+                      <Pressable
+                        key={st}
+                        onPress={() => setStatus(st)}
+                        className={clsx(
+                          "picker-option capitalize",
+                          status === st && "picker-option-active"
+                        )}
+                      >
+                        <Text
+                          className={clsx(
+                            "picker-option-text capitalize",
+                            status === st && "picker-option-text-active"
+                          )}
+                        >
+                          {st}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+
                 {/* Category Selection */}
                 <View className="auth-field">
                   <Text className="auth-label">Category</Text>
@@ -287,12 +269,16 @@ export default function CreateSubscriptionModal({
                 <Pressable
                   className={clsx(
                     "auth-button mt-4",
-                    !isFormValid && "auth-button-disabled"
+                    (!isFormValid || loading) && "auth-button-disabled"
                   )}
                   onPress={handleSubmit}
-                  disabled={!isFormValid}
+                  disabled={!isFormValid || loading}
                 >
-                  <Text className="auth-button-text">Create Subscription</Text>
+                  {loading ? (
+                    <ActivityIndicator color="#ffffff" />
+                  ) : (
+                    <Text className="auth-button-text">Save Changes</Text>
+                  )}
                 </Pressable>
               </View>
             </ScrollView>

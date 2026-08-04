@@ -1,6 +1,7 @@
 import { formatCurrency } from "@/lib/utils";
 import React from "react";
-import { Image, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import SubscriptionIcon from "./SubscriptionIcon";
 
 const UpcomingSubscriptionCard = ({
   name,
@@ -12,7 +13,7 @@ const UpcomingSubscriptionCard = ({
   return (
     <View className="upcoming-card">
       <View className="upcoming-row">
-        <Image source={icon} className="upcoming-icon" />
+        <SubscriptionIcon name={name} icon={icon} className="upcoming-icon" size={40} />
         <View>
           <Text className="upcoming-price">
             {formatCurrency(price, currency)}

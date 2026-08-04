@@ -1,33 +1,33 @@
+import { useUser } from "@clerk/expo";
 import ListHeading from "@/components/ListHeading";
 import SubscriptionCard from "@/components/SubscriptionCard";
 import CreateSubscriptionModal from "@/components/CreateSubscriptionModal";
 import UpcomingSubscriptionCard from "@/components/UpcomingSubscriptionCard";
-import {
-  HOME_BALANCE,
-  HOME_SUBSCRIPTIONS,
-  HOME_USER,
-  UPCOMING_SUBSCRIPTIONS,
-} from "@/constants/data";
 import { icons } from "@/constants/icons";
 import images from "@/constants/images";
 import "@/global.css";
 import { formatCurrency } from "@/lib/utils";
 import dayjs from "dayjs";
 import { styled } from "nativewind";
-import { useState, useMemo } from "react";
-import { FlatList, Image, Pressable, Text, View } from "react-native";
+import { useState, useMemo, useCallback } from "react";
+import EditSubModal from "@/components/EditSubscriptionModal";
+import { FlatList, Image, Pressable, Text, View, Alert } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 import { usePostHog } from "posthog-react-native";
 import { useSubscriptions } from "@/context/SubscriptionContext";
 
 const SafeAreaView = styled(RNSafeAreaView);
 
+const ItemSeparator = () => <View className="h-4" />;
+
 export default function App() {
+  const { user } = useUser();
   const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<
     string | null
   >(null);
-  const { subscriptions, addSubscription } = useSubscriptions();
+  const { subscriptions, addSubscription, updateSubscription, deleteSubscription } = useSubscriptions();
   const [isModalVisible, setModalVisible] = useState(false);
+  const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null);
   const posthog = usePostHog();
 
   const upcomingSubscriptions = useMemo(() => {
@@ -50,15 +50,42 @@ export default function App() {
       .sort((a, b) => a.daysLeft - b.daysLeft);
   }, [subscriptions]);
 
+  const totalMonthlyBalance = useMemo(() => {
+    return subscriptions
+      .filter((sub) => sub.status === "active")
+      .reduce((sum, sub) => {
+        const price = Number(sub.price) || 0;
+        const freq = sub.frequency?.toLowerCase();
+        if (freq === "yearly") return sum + price / 12;
+        if (freq === "weekly") return sum + price * 4.33;
+        if (freq === "daily") return sum + price * 30;
+        return sum + price;
+      }, 0);
+  }, [subscriptions]);
+
+  const nextRenewalDate = useMemo(() => {
+    if (upcomingSubscriptions.length > 0) {
+      const closest = upcomingSubscriptions[0];
+      const sub = subscriptions.find((s) => s.id === closest.id);
+      if (sub?.renewalDate) {
+        return dayjs(sub.renewalDate).format("MM/DD");
+      }
+    }
+    return "--/--";
+  }, [upcomingSubscriptions, subscriptions]);
+
+  const userName = user?.fullName || user?.firstName || "User";
+  const userAvatar = user?.imageUrl ? { uri: user.imageUrl } : images.avatar;
+
   return (
     <SafeAreaView className="flex-1 bg-background p-5">
       <FlatList
-        ListHeaderComponent={() => (
+        ListHeaderComponent={
           <>
             <View className="home-header">
               <View className="home-user">
-                <Image source={images.avatar} className="home-avatar" />
-                <Text className="home-user-name">{HOME_USER.name}</Text>
+                <Image source={userAvatar} className="home-avatar" />
+                <Text className="home-user-name">{userName}</Text>
               </View>
               <Pressable
                 onPress={() => {
@@ -73,14 +100,14 @@ export default function App() {
             </View>
 
             <View className="home-balance-card">
-              <Text className="home-balance-label">Balance</Text>
+              <Text className="home-balance-label">Monthly Expenses</Text>
 
               <View className="home-balance-row">
                 <Text className="home-balance-amount">
-                  {formatCurrency(HOME_BALANCE.amount)}
+                  {formatCurrency(totalMonthlyBalance)}
                 </Text>
                 <Text className="home-balance-date">
-                  {dayjs(HOME_BALANCE.nextRenewalDate).format("MM/DD")}
+                  {nextRenewalDate}
                 </Text>
               </View>
             </View>
@@ -105,7 +132,7 @@ export default function App() {
 
             <ListHeading title="All Subscriptions" />
           </>
-        )}
+        }
         data={subscriptions}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
@@ -123,10 +150,33 @@ export default function App() {
                 });
               }
             }}
+            onEditPress={() => {
+              setEditingSubscription(item);
+            }}
+            onDeletePress={() => {
+              Alert.alert(
+                "Delete Subscription",
+                `Are you sure you want to delete ${item.name}?`,
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                      try {
+                        await deleteSubscription(item.id);
+                      } catch (err) {
+                        console.error("Delete error:", err);
+                      }
+                    },
+                  },
+                ]
+              );
+            }}
           />
         )}
         extraData={expandedSubscriptionId}
-        ItemSeparatorComponent={() => <View className="h-4" />}
+        ItemSeparatorComponent={ItemSeparator}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <Text className="home-empty-state">No subscriptions yet.</Text>
@@ -138,6 +188,14 @@ export default function App() {
         onClose={() => setModalVisible(false)}
         onSubmit={(newSub) => {
           addSubscription(newSub);
+        }}
+      />
+      <EditSubModal
+        visible={!!editingSubscription}
+        subscription={editingSubscription}
+        onClose={() => setEditingSubscription(null)}
+        onSubmit={async (id, updatedData) => {
+          await updateSubscription(id, updatedData);
         }}
       />
     </SafeAreaView>
