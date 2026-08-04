@@ -27,47 +27,50 @@ export interface CreateSubscriptionModalProps {
 
 const CATEGORIES = [
   "Entertainment",
-  "AI Tools",
-  "Developer Tools",
-  "Design",
   "Productivity",
-  "Cloud",
-  "Music",
+  "Education",
+  "Health",
+  "Finance",
+  "AI",
   "Other",
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
   Entertainment: "#f5a2a2",
-  "AI Tools": "#b8d4e3",
-  "Developer Tools": "#e8def8",
-  Design: "#f5c542",
   Productivity: "#b8e8d0",
-  Cloud: "#a2c4f5",
-  Music: "#d0a2f5",
+  Education: "#e8def8",
+  Health: "#b8e8d0",
+  Finance: "#f5c542",
+  AI: "#b8d4e3",
   Other: "#e0e0e0",
 };
 
 const BACKEND_CATEGORY_MAP: Record<string, string> = {
-  "AI Tools": "ai",
-  "Developer Tools": "productivity",
   Entertainment: "entertainment",
-  Design: "productivity",
   Productivity: "productivity",
-  Cloud: "productivity",
-  Music: "entertainment",
+  Education: "education",
+  Health: "health",
+  Finance: "finance",
+  AI: "ai",
   Other: "other",
 };
 
+const FREQUENCIES: Array<"Weekly" | "Monthly" | "Yearly"> = [
+  "Weekly",
+  "Monthly",
+  "Yearly",
+];
+
 const POPULAR_PRESETS = [
   { name: "Netflix", category: "Entertainment", icon: "netflix", color: "#f5a2a2", defaultPrice: "15.99" },
-  { name: "Spotify", category: "Music", icon: "spotify", color: "#d0a2f5", defaultPrice: "10.99" },
-  { name: "ChatGPT", category: "AI Tools", icon: "openai", color: "#b8d4e3", defaultPrice: "20.00" },
-  { name: "GitHub Pro", category: "Developer Tools", icon: "github", color: "#e8def8", defaultPrice: "4.00" },
-  { name: "Adobe CC", category: "Design", icon: "adobe", color: "#f5c542", defaultPrice: "54.99" },
-  { name: "Canva Pro", category: "Design", icon: "canva", color: "#b8e8d0", defaultPrice: "12.99" },
-  { name: "Claude Pro", category: "AI Tools", icon: "claude", color: "#b8d4e3", defaultPrice: "20.00" },
+  { name: "Spotify", category: "Entertainment", icon: "spotify", color: "#d0a2f5", defaultPrice: "10.99" },
+  { name: "ChatGPT", category: "AI", icon: "openai", color: "#b8d4e3", defaultPrice: "20.00" },
+  { name: "GitHub Pro", category: "Productivity", icon: "github", color: "#e8def8", defaultPrice: "4.00" },
+  { name: "Adobe CC", category: "Productivity", icon: "adobe", color: "#f5c542", defaultPrice: "54.99" },
+  { name: "Canva Pro", category: "Productivity", icon: "canva", color: "#b8e8d0", defaultPrice: "12.99" },
+  { name: "Claude Pro", category: "AI", icon: "claude", color: "#b8d4e3", defaultPrice: "20.00" },
   { name: "Notion", category: "Productivity", icon: "notion", color: "#b8e8d0", defaultPrice: "10.00" },
-  { name: "Dropbox", category: "Cloud", icon: "dropbox", color: "#a2c4f5", defaultPrice: "11.99" },
+  { name: "Dropbox", category: "Productivity", icon: "dropbox", color: "#a2c4f5", defaultPrice: "11.99" },
 ];
 
 const PAYMENT_METHODS = ["Credit Card", "Apple Pay", "PayPal", "Bank Transfer", "Other"];
@@ -80,7 +83,7 @@ export default function CreateSubscriptionModal({
   const { currency: preferredCurrency } = useCurrency();
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
-  const [frequency, setFrequency] = useState<"Monthly" | "Yearly">("Monthly");
+  const [frequency, setFrequency] = useState<"Weekly" | "Monthly" | "Yearly">("Monthly");
   const [category, setCategory] = useState("Other");
   const [selectedIconKey, setSelectedIconKey] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
@@ -194,10 +197,10 @@ export default function CreateSubscriptionModal({
                               : undefined
                           }
                           className={clsx(
-                            "mr-2.5 px-3 py-2 rounded-2xl border flex-row items-center gap-2",
+                            "mr-2.5 px-3.5 py-2 rounded-2xl border flex-row items-center gap-2",
                             isSelected
-                              ? "border-primary"
-                              : "border-black/10 bg-white"
+                              ? "border-primary shadow-sm"
+                              : "border-black/10 bg-card"
                           )}
                         >
                           <SubscriptionIcon
@@ -253,39 +256,26 @@ export default function CreateSubscriptionModal({
                 {/* Frequency Toggles */}
                 <View className="auth-field">
                   <Text className="auth-label">Billing Frequency</Text>
-                  <View className="picker-row">
-                    <Pressable
-                      onPress={() => setFrequency("Monthly")}
-                      className={clsx(
-                        "picker-option",
-                        frequency === "Monthly" && "picker-option-active"
-                      )}
-                    >
-                      <Text
+                  <View className="picker-row flex-row flex-wrap gap-2">
+                    {FREQUENCIES.map((freq) => (
+                      <Pressable
+                        key={freq}
+                        onPress={() => setFrequency(freq)}
                         className={clsx(
-                          "picker-option-text",
-                          frequency === "Monthly" && "picker-option-text-active"
+                          "picker-option flex-1 min-w-[70px]",
+                          frequency === freq && "picker-option-active"
                         )}
                       >
-                        Monthly
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => setFrequency("Yearly")}
-                      className={clsx(
-                        "picker-option",
-                        frequency === "Yearly" && "picker-option-active"
-                      )}
-                    >
-                      <Text
-                        className={clsx(
-                          "picker-option-text",
-                          frequency === "Yearly" && "picker-option-text-active"
-                        )}
-                      >
-                        Yearly
-                      </Text>
-                    </Pressable>
+                        <Text
+                          className={clsx(
+                            "picker-option-text text-center text-xs",
+                            frequency === freq && "picker-option-text-active"
+                          )}
+                        >
+                          {freq}
+                        </Text>
+                      </Pressable>
+                    ))}
                   </View>
                 </View>
 
@@ -357,10 +347,10 @@ export default function CreateSubscriptionModal({
                           key={method}
                           onPress={() => setPaymentMethod(method)}
                           className={clsx(
-                            "mr-2 px-3 py-2 rounded-2xl border",
+                            "mr-2.5 px-3.5 py-2 rounded-2xl border",
                             isSelected
                               ? "bg-primary border-primary"
-                              : "bg-white border-black/10"
+                              : "bg-card border-black/10"
                           )}
                         >
                           <Text

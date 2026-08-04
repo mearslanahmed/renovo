@@ -49,7 +49,7 @@ export default function App() {
           daysLeft,
         };
       })
-      .filter((sub) => sub.daysLeft >= 0)
+      .filter((sub) => sub.daysLeft >= 0 && sub.daysLeft <= 7)
       .sort((a, b) => a.daysLeft - b.daysLeft);
   }, [subscriptions]);
 
@@ -67,15 +67,21 @@ export default function App() {
   }, [subscriptions]);
 
   const nextRenewalDate = useMemo(() => {
-    if (upcomingSubscriptions.length > 0) {
-      const closest = upcomingSubscriptions[0];
-      const sub = subscriptions.find((s) => s.id === closest.id);
-      if (sub?.renewalDate) {
-        return dayjs(sub.renewalDate).format("MM/DD");
-      }
+    const today = dayjs().startOf("day");
+    const activeWithDates = subscriptions
+      .filter((s) => s.status === "active" && s.renewalDate)
+      .map((s) => ({
+        ...s,
+        diff: dayjs(s.renewalDate).startOf("day").diff(today, "day"),
+      }))
+      .filter((s) => s.diff >= 0)
+      .sort((a, b) => a.diff - b.diff);
+
+    if (activeWithDates.length > 0 && activeWithDates[0].renewalDate) {
+      return dayjs(activeWithDates[0].renewalDate).format("MMM D");
     }
     return "--/--";
-  }, [upcomingSubscriptions, subscriptions]);
+  }, [subscriptions]);
 
   const emailUsername = user?.primaryEmailAddress?.emailAddress
     ? user.primaryEmailAddress.emailAddress.split("@")[0]
@@ -122,23 +128,20 @@ export default function App() {
               </View>
             </View>
 
-            <View className="mb-5">
-              <ListHeading title="Upcoming" />
-              <FlatList
-                data={upcomingSubscriptions}
-                renderItem={({ item }) => (
-                  <UpcomingSubscriptionCard {...item} />
-                )}
-                keyExtractor={(item) => item.id}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                ListEmptyComponent={
-                  <Text className="home-empty-state">
-                    No upcoming renewals yet.
-                  </Text>
-                }
-              />
-            </View>
+            {upcomingSubscriptions.length > 0 && (
+              <View className="mb-5">
+                <ListHeading title="Upcoming (Next 7 Days)" />
+                <FlatList
+                  data={upcomingSubscriptions}
+                  renderItem={({ item }) => (
+                    <UpcomingSubscriptionCard {...item} />
+                  )}
+                  keyExtractor={(item) => item.id}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                />
+              </View>
+            )}
 
             <ListHeading title="All Subscriptions" />
           </>

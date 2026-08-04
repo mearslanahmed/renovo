@@ -26,36 +26,39 @@ const PAYMENT_METHODS = ["Credit Card", "Apple Pay", "PayPal", "Bank Transfer", 
 
 const CATEGORIES = [
   "Entertainment",
-  "AI Tools",
-  "Developer Tools",
-  "Design",
   "Productivity",
-  "Cloud",
-  "Music",
+  "Education",
+  "Health",
+  "Finance",
+  "AI",
   "Other",
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
   Entertainment: "#f5a2a2",
-  "AI Tools": "#b8d4e3",
-  "Developer Tools": "#e8def8",
-  Design: "#f5c542",
   Productivity: "#b8e8d0",
-  Cloud: "#a2c4f5",
-  Music: "#d0a2f5",
+  Education: "#e8def8",
+  Health: "#b8e8d0",
+  Finance: "#f5c542",
+  AI: "#b8d4e3",
   Other: "#e0e0e0",
 };
 
 const BACKEND_CATEGORY_MAP: Record<string, string> = {
-  "AI Tools": "ai",
-  "Developer Tools": "productivity",
   Entertainment: "entertainment",
-  Design: "productivity",
   Productivity: "productivity",
-  Cloud: "productivity",
-  Music: "entertainment",
+  Education: "education",
+  Health: "health",
+  Finance: "finance",
+  AI: "ai",
   Other: "other",
 };
+
+const FREQUENCIES: Array<"Weekly" | "Monthly" | "Yearly"> = [
+  "Weekly",
+  "Monthly",
+  "Yearly",
+];
 
 const STATUS_OPTIONS: Array<"active" | "canceled" | "expired"> = [
   "active",
@@ -71,7 +74,7 @@ export default function EditSubscriptionModal({
 }: EditSubscriptionModalProps) {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
-  const [frequency, setFrequency] = useState<"Monthly" | "Yearly">("Monthly");
+  const [frequency, setFrequency] = useState<"Weekly" | "Monthly" | "Yearly">("Monthly");
   const [category, setCategory] = useState("Other");
   const [status, setStatus] = useState<"active" | "canceled" | "expired">("active");
   const [startDateStr, setStartDateStr] = useState(dayjs().format("YYYY-MM-DD"));
@@ -83,9 +86,10 @@ export default function EditSubscriptionModal({
     if (subscription) {
       setName(subscription.name || "");
       setPrice(subscription.price ? String(subscription.price) : "");
-      setFrequency(
-        subscription.frequency?.toLowerCase() === "yearly" ? "Yearly" : "Monthly"
-      );
+      
+      const freqLower = subscription.frequency?.toLowerCase() || "monthly";
+      const matchedFreq = FREQUENCIES.find((f) => f.toLowerCase() === freqLower) || "Monthly";
+      setFrequency(matchedFreq);
       // Map category back to display string if possible
       const cat = subscription.category || "other";
       const displayCat =
@@ -198,39 +202,26 @@ export default function EditSubscriptionModal({
                 {/* Frequency Toggles */}
                 <View className="auth-field">
                   <Text className="auth-label">Billing Frequency</Text>
-                  <View className="picker-row">
-                    <Pressable
-                      onPress={() => setFrequency("Monthly")}
-                      className={clsx(
-                        "picker-option",
-                        frequency === "Monthly" && "picker-option-active"
-                      )}
-                    >
-                      <Text
+                  <View className="picker-row flex-row flex-wrap gap-2">
+                    {FREQUENCIES.map((freq) => (
+                      <Pressable
+                        key={freq}
+                        onPress={() => setFrequency(freq)}
                         className={clsx(
-                          "picker-option-text",
-                          frequency === "Monthly" && "picker-option-text-active"
+                          "picker-option flex-1 min-w-[70px]",
+                          frequency === freq && "picker-option-active"
                         )}
                       >
-                        Monthly
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => setFrequency("Yearly")}
-                      className={clsx(
-                        "picker-option",
-                        frequency === "Yearly" && "picker-option-active"
-                      )}
-                    >
-                      <Text
-                        className={clsx(
-                          "picker-option-text",
-                          frequency === "Yearly" && "picker-option-text-active"
-                        )}
-                      >
-                        Yearly
-                      </Text>
-                    </Pressable>
+                        <Text
+                          className={clsx(
+                            "picker-option-text text-center text-xs",
+                            frequency === freq && "picker-option-text-active"
+                          )}
+                        >
+                          {freq}
+                        </Text>
+                      </Pressable>
+                    ))}
                   </View>
                 </View>
 
@@ -328,10 +319,10 @@ export default function EditSubscriptionModal({
                           key={method}
                           onPress={() => setPaymentMethod(method)}
                           className={clsx(
-                            "mr-2 px-3 py-2 rounded-2xl border",
+                            "mr-2.5 px-3.5 py-2 rounded-2xl border",
                             isSelected
                               ? "bg-primary border-primary"
-                              : "bg-white border-black/10"
+                              : "bg-card border-black/10"
                           )}
                         >
                           <Text
