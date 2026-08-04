@@ -13,12 +13,16 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { clsx } from "clsx";
 
+import dayjs from "dayjs";
+
 export interface EditSubscriptionModalProps {
   visible: boolean;
   subscription: Subscription | null;
   onClose: () => void;
   onSubmit: (id: string, updatedData: any) => Promise<void>;
 }
+
+const PAYMENT_METHODS = ["Credit Card", "Apple Pay", "PayPal", "Bank Transfer", "Other"];
 
 const CATEGORIES = [
   "Entertainment",
@@ -70,6 +74,9 @@ export default function EditSubscriptionModal({
   const [frequency, setFrequency] = useState<"Monthly" | "Yearly">("Monthly");
   const [category, setCategory] = useState("Other");
   const [status, setStatus] = useState<"active" | "canceled" | "expired">("active");
+  const [startDateStr, setStartDateStr] = useState(dayjs().format("YYYY-MM-DD"));
+  const [renewalDateStr, setRenewalDateStr] = useState(dayjs().add(1, "month").format("YYYY-MM-DD"));
+  const [paymentMethod, setPaymentMethod] = useState("Credit Card");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -86,6 +93,13 @@ export default function EditSubscriptionModal({
         "Other";
       setCategory(displayCat);
       setStatus((subscription.status as any) || "active");
+      setStartDateStr(
+        subscription.startDate ? dayjs(subscription.startDate).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD")
+      );
+      setRenewalDateStr(
+        subscription.renewalDate ? dayjs(subscription.renewalDate).format("YYYY-MM-DD") : ""
+      );
+      setPaymentMethod(subscription.paymentMethod || "Credit Card");
     }
   }, [subscription]);
 
@@ -98,6 +112,10 @@ export default function EditSubscriptionModal({
     try {
       const parsedPrice = parseFloat(price);
       const normalizedCategory = BACKEND_CATEGORY_MAP[category] || "other";
+      const parsedStart = dayjs(startDateStr).isValid() ? dayjs(startDateStr).toISOString() : undefined;
+      const parsedRenewal = renewalDateStr.trim() && dayjs(renewalDateStr.trim()).isValid()
+        ? dayjs(renewalDateStr.trim()).toISOString()
+        : undefined;
 
       const updatedData: any = {
         name: name.trim(),
@@ -107,6 +125,9 @@ export default function EditSubscriptionModal({
         plan: category,
         color: CATEGORY_COLORS[category] || CATEGORY_COLORS["Other"],
         status,
+        startDate: parsedStart,
+        renewalDate: parsedRenewal,
+        paymentMethod,
       };
 
       await onSubmit(subscription.id, updatedData);
@@ -263,6 +284,68 @@ export default function EditSubscriptionModal({
                       </Pressable>
                     ))}
                   </View>
+                </View>
+
+                {/* Dates Section */}
+                <View className="flex-row gap-3">
+                  <View className="auth-field flex-1">
+                    <Text className="auth-label">Start Date</Text>
+                    <View className="auth-input-wrap">
+                      <Ionicons name="calendar-outline" size={18} color="#666666" />
+                      <TextInput
+                        value={startDateStr}
+                        onChangeText={setStartDateStr}
+                        placeholder="YYYY-MM-DD"
+                        placeholderTextColor="#666666"
+                        className="auth-input-inner text-xs"
+                      />
+                    </View>
+                  </View>
+
+                  <View className="auth-field flex-1">
+                    <Text className="auth-label">Renewal (Optional)</Text>
+                    <View className="auth-input-wrap">
+                      <Ionicons name="time-outline" size={18} color="#666666" />
+                      <TextInput
+                        value={renewalDateStr}
+                        onChangeText={setRenewalDateStr}
+                        placeholder="YYYY-MM-DD"
+                        placeholderTextColor="#999999"
+                        className="auth-input-inner text-xs"
+                      />
+                    </View>
+                  </View>
+                </View>
+
+                {/* Payment Method */}
+                <View className="auth-field">
+                  <Text className="auth-label">Payment Method</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row py-1">
+                    {PAYMENT_METHODS.map((method) => {
+                      const isSelected = paymentMethod === method;
+                      return (
+                        <Pressable
+                          key={method}
+                          onPress={() => setPaymentMethod(method)}
+                          className={clsx(
+                            "mr-2 px-3 py-2 rounded-2xl border",
+                            isSelected
+                              ? "bg-primary border-primary"
+                              : "bg-white border-black/10"
+                          )}
+                        >
+                          <Text
+                            className={clsx(
+                              "text-xs font-sans-semibold",
+                              isSelected ? "text-white" : "text-primary"
+                            )}
+                          >
+                            {method}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
                 </View>
 
                 {/* Submit Button */}

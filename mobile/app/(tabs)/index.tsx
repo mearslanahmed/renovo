@@ -9,12 +9,14 @@ import "@/global.css";
 import { formatCurrency } from "@/lib/utils";
 import dayjs from "dayjs";
 import { styled } from "nativewind";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo} from "react";
 import EditSubModal from "@/components/EditSubscriptionModal";
 import { FlatList, Image, Pressable, Text, View, Alert } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 import { usePostHog } from "posthog-react-native";
 import { useSubscriptions } from "@/context/SubscriptionContext";
+import { useCurrency } from "@/context/CurrencyContext";
+import UserAvatar from "@/components/UserAvatar";
 
 const SafeAreaView = styled(RNSafeAreaView);
 
@@ -22,6 +24,7 @@ const ItemSeparator = () => <View className="h-4" />;
 
 export default function App() {
   const { user } = useUser();
+  const { currency: preferredCurrency } = useCurrency();
   const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<
     string | null
   >(null);
@@ -74,7 +77,14 @@ export default function App() {
     return "--/--";
   }, [upcomingSubscriptions, subscriptions]);
 
-  const userName = user?.fullName || user?.firstName || "User";
+  const emailUsername = user?.primaryEmailAddress?.emailAddress
+    ? user.primaryEmailAddress.emailAddress.split("@")[0]
+    : "";
+  const derivedName = emailUsername
+    ? emailUsername.charAt(0).toUpperCase() + emailUsername.slice(1)
+    : "User";
+
+  const userName = user?.fullName || user?.firstName || derivedName;
   const userAvatar = user?.imageUrl ? { uri: user.imageUrl } : images.avatar;
 
   return (
@@ -84,7 +94,7 @@ export default function App() {
           <>
             <View className="home-header">
               <View className="home-user">
-                <Image source={userAvatar} className="home-avatar" />
+                <UserAvatar size={48} className="home-avatar" />
                 <Text className="home-user-name">{userName}</Text>
               </View>
               <Pressable
@@ -104,7 +114,7 @@ export default function App() {
 
               <View className="home-balance-row">
                 <Text className="home-balance-amount">
-                  {formatCurrency(totalMonthlyBalance)}
+                  {formatCurrency(totalMonthlyBalance, preferredCurrency)}
                 </Text>
                 <Text className="home-balance-date">
                   {nextRenewalDate}

@@ -11,6 +11,7 @@ import dayjs from "dayjs";
 import ListHeading from "@/components/ListHeading";
 import { useSubscriptions } from "@/context/SubscriptionContext";
 import SubscriptionIcon from "@/components/SubscriptionIcon";
+import { useCurrency } from "@/context/CurrencyContext";
 
 const SafeAreaView = styled(RNSafeAreaView);
 
@@ -18,6 +19,20 @@ const Insights = () => {
   const posthog = usePostHog();
   const router = useRouter();
   const { subscriptions } = useSubscriptions();
+  const { currency: preferredCurrency } = useCurrency();
+
+  const totalMonthlyBalance = React.useMemo(() => {
+    return subscriptions
+      .filter((sub) => sub.status === "active")
+      .reduce((sum, sub) => {
+        const price = Number(sub.price) || 0;
+        const freq = sub.frequency?.toLowerCase();
+        if (freq === "yearly") return sum + price / 12;
+        if (freq === "weekly") return sum + price * 4.33;
+        if (freq === "daily") return sum + price * 30;
+        return sum + price;
+      }, 0);
+  }, [subscriptions]);
 
   const chartData = React.useMemo(() => {
     const today = dayjs();
@@ -123,15 +138,15 @@ const Insights = () => {
                   Expenses
                 </Text>
                 <Text className="text-xl font-sans-bold text-primary">
-                  -$424.63
+                  -{formatCurrency(totalMonthlyBalance, preferredCurrency)}
                 </Text>
               </View>
               <View className="flex-row items-center justify-between">
                 <Text className="text-base font-sans-semibold text-muted-foreground">
-                  March 2026
+                  {dayjs().format("MMMM YYYY")}
                 </Text>
                 <Text className="text-base font-sans-semibold text-muted-foreground">
-                  +12%
+                  Active Total
                 </Text>
               </View>
             </View>
@@ -161,7 +176,7 @@ const Insights = () => {
             </View>
             <View className="items-end">
               <Text className="text-lg font-sans-bold text-primary">
-                {formatCurrency(item.price, item.currency)}
+                {formatCurrency(item.price, preferredCurrency)}
               </Text>
               <Text className="mt-1 text-sm font-sans-semibold text-primary/60">
                 per month

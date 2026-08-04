@@ -1,6 +1,6 @@
-import React from "react";
-import { Image, Text, View, ImageSourcePropType } from "react-native";
 import { icons } from "@/constants/icons";
+import React from "react";
+import { Image, ImageSourcePropType, Text, View } from "react-native";
 
 interface SubscriptionIconProps {
   name: string;
@@ -70,7 +70,10 @@ export default function SubscriptionIcon({
   }
 
   // 3. String URL (e.g., 'https://...')
-  if (typeof icon === "string" && (icon.startsWith("http://") || icon.startsWith("https://"))) {
+  if (
+    typeof icon === "string" &&
+    (icon.startsWith("http://") || icon.startsWith("https://"))
+  ) {
     return <Image source={{ uri: icon }} className={className} />;
   }
 

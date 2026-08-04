@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   View,
@@ -14,6 +14,10 @@ import { clsx } from "clsx";
 import dayjs from "dayjs";
 import { icons } from "@/constants/icons";
 import { posthog } from "@/lib/posthog";
+
+import SubscriptionIcon from "./SubscriptionIcon";
+
+import { useCurrency } from "@/context/CurrencyContext";
 
 export interface CreateSubscriptionModalProps {
   visible: boolean;
@@ -66,17 +70,24 @@ const POPULAR_PRESETS = [
   { name: "Dropbox", category: "Cloud", icon: "dropbox", color: "#a2c4f5", defaultPrice: "11.99" },
 ];
 
+const PAYMENT_METHODS = ["Credit Card", "Apple Pay", "PayPal", "Bank Transfer", "Other"];
+
 export default function CreateSubscriptionModal({
   visible,
   onClose,
   onSubmit,
 }: CreateSubscriptionModalProps) {
+  const { currency: preferredCurrency } = useCurrency();
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [frequency, setFrequency] = useState<"Monthly" | "Yearly">("Monthly");
   const [category, setCategory] = useState("Other");
   const [selectedIconKey, setSelectedIconKey] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+
+  const [startDateStr, setStartDateStr] = useState(dayjs().format("YYYY-MM-DD"));
+  const [renewalDateStr, setRenewalDateStr] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("Credit Card");
 
   const isFormValid = name.trim().length > 0 && parseFloat(price) > 0;
 
@@ -96,6 +107,9 @@ export default function CreateSubscriptionModal({
     setCategory("Other");
     setSelectedIconKey(null);
     setSelectedColor(null);
+    setStartDateStr(dayjs().format("YYYY-MM-DD"));
+    setRenewalDateStr("");
+    setPaymentMethod("Credit Card");
     onClose();
   };
 
@@ -103,7 +117,10 @@ export default function CreateSubscriptionModal({
     if (!isFormValid) return;
 
     const parsedPrice = parseFloat(price);
-    const startDate = dayjs().toISOString();
+    const parsedStart = dayjs(startDateStr).isValid() ? dayjs(startDateStr).toISOString() : dayjs().toISOString();
+    const parsedRenewal = renewalDateStr.trim() && dayjs(renewalDateStr.trim()).isValid()
+      ? dayjs(renewalDateStr.trim()).toISOString()
+      : undefined;
 
     const normalizedCategory = BACKEND_CATEGORY_MAP[category] || "other";
 
@@ -116,9 +133,10 @@ export default function CreateSubscriptionModal({
       color: selectedColor || CATEGORY_COLORS[category] || CATEGORY_COLORS["Other"],
       icon: selectedIconKey || name.trim().toLowerCase(),
       status: "active",
-      startDate,
-      currency: "USD",
-      paymentMethod: "Visa ending in 0000",
+      startDate: parsedStart,
+      renewalDate: parsedRenewal,
+      currency: preferredCurrency || "USD",
+      paymentMethod,
     };
 
     onSubmit(newSubscription);
@@ -161,28 +179,42 @@ export default function CreateSubscriptionModal({
             >
               <View className="modal-body">
                 {/* Popular Services Quick Select */}
-                <View className="auth-field">
+                <View className="auth-field mb-2">
                   <Text className="auth-label">Quick Select Platform</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row py-1">
-                    {POPULAR_PRESETS.map((preset) => (
-                      <Pressable
-                        key={preset.name}
-                        onPress={() => handleSelectPreset(preset)}
-                        className={clsx(
-                          "mr-2 px-3 py-1.5 rounded-full border border-black/10 flex-row items-center",
-                          name === preset.name ? "bg-black" : "bg-white"
-                        )}
-                      >
-                        <Text
+                    {POPULAR_PRESETS.map((preset) => {
+                      const isSelected = name === preset.name;
+                      return (
+                        <Pressable
+                          key={preset.name}
+                          onPress={() => handleSelectPreset(preset)}
+                          style={
+                            isSelected
+                              ? { backgroundColor: preset.color, borderColor: "#081126" }
+                              : undefined
+                          }
                           className={clsx(
-                            "text-xs font-sans-medium",
-                            name === preset.name ? "text-white" : "text-black"
+                            "mr-2.5 px-3 py-2 rounded-2xl border flex-row items-center gap-2",
+                            isSelected
+                              ? "border-primary"
+                              : "border-black/10 bg-white"
                           )}
                         >
-                          {preset.name}
-                        </Text>
-                      </Pressable>
-                    ))}
+                          <SubscriptionIcon
+                            name={preset.name}
+                            icon={preset.icon}
+                            color={preset.color}
+                            size={22}
+                          />
+                          <Text className="text-xs font-sans-semibold text-primary">
+                            {preset.name}
+                          </Text>
+                          {isSelected && (
+                            <Ionicons name="checkmark-circle" size={14} color="#081126" />
+                          )}
+                        </Pressable>
+                      );
+                    })}
                   </ScrollView>
                 </View>
 
@@ -281,6 +313,68 @@ export default function CreateSubscriptionModal({
                       </Pressable>
                     ))}
                   </View>
+                </View>
+
+                {/* Dates Section */}
+                <View className="flex-row gap-3">
+                  <View className="auth-field flex-1">
+                    <Text className="auth-label">Start Date</Text>
+                    <View className="auth-input-wrap">
+                      <Ionicons name="calendar-outline" size={18} color="#666666" />
+                      <TextInput
+                        value={startDateStr}
+                        onChangeText={setStartDateStr}
+                        placeholder="YYYY-MM-DD"
+                        placeholderTextColor="#666666"
+                        className="auth-input-inner text-xs"
+                      />
+                    </View>
+                  </View>
+
+                  <View className="auth-field flex-1">
+                    <Text className="auth-label">Renewal (Optional)</Text>
+                    <View className="auth-input-wrap">
+                      <Ionicons name="time-outline" size={18} color="#666666" />
+                      <TextInput
+                        value={renewalDateStr}
+                        onChangeText={setRenewalDateStr}
+                        placeholder="YYYY-MM-DD"
+                        placeholderTextColor="#999999"
+                        className="auth-input-inner text-xs"
+                      />
+                    </View>
+                  </View>
+                </View>
+
+                {/* Payment Method */}
+                <View className="auth-field">
+                  <Text className="auth-label">Payment Method</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row py-1">
+                    {PAYMENT_METHODS.map((method) => {
+                      const isSelected = paymentMethod === method;
+                      return (
+                        <Pressable
+                          key={method}
+                          onPress={() => setPaymentMethod(method)}
+                          className={clsx(
+                            "mr-2 px-3 py-2 rounded-2xl border",
+                            isSelected
+                              ? "bg-primary border-primary"
+                              : "bg-white border-black/10"
+                          )}
+                        >
+                          <Text
+                            className={clsx(
+                              "text-xs font-sans-semibold",
+                              isSelected ? "text-white" : "text-primary"
+                            )}
+                          >
+                            {method}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
                 </View>
 
                 {/* Submit Button */}

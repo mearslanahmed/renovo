@@ -4,6 +4,7 @@ import React from "react";
 import { Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import SubscriptionIcon from "./SubscriptionIcon";
+import { useCurrency } from "@/context/CurrencyContext";
 
 const SubscriptionCard = ({
   name,
@@ -23,6 +24,8 @@ const SubscriptionCard = ({
   startDate,
   status,
 }: SubscriptionCardProps) => {
+  const { currency: preferredCurrency } = useCurrency();
+
   return (
     <Pressable
       onPress={onPress}
@@ -45,7 +48,7 @@ const SubscriptionCard = ({
         </View>
 
         <View className="sub-price-box">
-          <Text className="sub-price">{formatCurrency(price, currency)}</Text>
+          <Text className="sub-price">{formatCurrency(price, preferredCurrency)}</Text>
           <Text className="sub-frequency">{frequency}</Text>
         </View>
       </View>
