@@ -19,7 +19,7 @@ import { clsx } from 'clsx';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function SignIn() {
-  const { signIn, setActive, isLoaded } = useSignIn();
+  const { signIn, fetchStatus } = useSignIn();
   const router = useRouter();
   const posthog = usePostHog();
 
@@ -38,12 +38,13 @@ export default function SignIn() {
     Keyboard.dismiss();
 
     try {
-      const result = await signIn.create({
+      // Use the new Core 3 password() method
+      const result = await signIn.password({
         identifier: emailAddress,
         password,
       });
 
-      if (result && result.error) {
+      if (result.error) {
         setErrorMsg(result.error.message || 'Invalid sign in attempt.');
         posthog.capture('sign_in_failed', {
           error_message: result.error.message || 'Invalid sign in attempt.',
@@ -52,7 +53,14 @@ export default function SignIn() {
       }
 
       if (signIn.status === 'complete') {
-        await setActive({ session: signIn.createdSessionId });
+        // Use finalize() instead of setActive() to activate the session
+        const finalizeResult = await signIn.finalize();
+
+        if (finalizeResult.error) {
+          setErrorMsg(finalizeResult.error.message || 'Failed to activate session.');
+          return;
+        }
+
         posthog.identify(emailAddress, {
           email: emailAddress,
         });
@@ -65,7 +73,7 @@ export default function SignIn() {
       }
     } catch (err: any) {
       console.error(JSON.stringify(err, null, 2));
-      const message = err.errors?.[0]?.message || 'An error occurred.';
+      const message = err.errors?.[0]?.message || err.message || 'An error occurred.';
       setErrorMsg(message);
       posthog.capture('sign_in_failed', { error_message: message });
     } finally {

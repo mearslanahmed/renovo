@@ -19,7 +19,7 @@ import { clsx } from 'clsx';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function SignUp() {
-  const { signUp, setActive, isLoaded } = useSignUp();
+  const { signUp, fetchStatus } = useSignUp();
   const router = useRouter();
   const posthog = usePostHog();
 
@@ -40,23 +40,33 @@ export default function SignUp() {
     Keyboard.dismiss();
 
     try {
-      const result = await signUp.create({
+      // Use the new Core 3 password() method which handles create + sets identifier
+      const result = await signUp.password({
         emailAddress,
         password,
       });
 
-      if (result && result.error) {
+      if (result.error) {
         const message = result.error.message || 'An error occurred during sign up.';
         setErrorMsg(message);
         posthog.capture('sign_up_failed', { error_message: message, step: 'create' });
         return;
       }
 
-      await signUp.verifications.sendEmailCode();
+      // Use the new verifications.sendEmailCode() instead of prepareVerification
+      const sendResult = await signUp.verifications.sendEmailCode();
+
+      if (sendResult.error) {
+        const message = sendResult.error.message || 'Failed to send verification code.';
+        setErrorMsg(message);
+        posthog.capture('sign_up_failed', { error_message: message, step: 'send_code' });
+        return;
+      }
+
       setPendingVerification(true);
     } catch (err: any) {
-      console.error(JSON.stringify(err, null, 2));
-      const message = err.errors?.[0]?.message || 'An error occurred.';
+      console.error('Clerk Create Error:', err);
+      const message = err.errors?.[0]?.message || err.message || 'An error occurred.';
       setErrorMsg(message);
       posthog.capture('sign_up_failed', { error_message: message, step: 'create' });
     } finally {
@@ -73,11 +83,10 @@ export default function SignUp() {
     posthog.capture('email_verification_submitted');
 
     try {
-      const result = await signUp.verifications.verifyEmailCode({
-        code,
-      });
+      // Use the new verifications.verifyEmailCode() instead of attemptVerification
+      const result = await signUp.verifications.verifyEmailCode({ code });
 
-      if (result && result.error) {
+      if (result.error) {
         const message = result.error.message || 'Verification failed.';
         setErrorMsg(message);
         posthog.capture('sign_up_failed', { error_message: message, step: 'verify' });
@@ -85,7 +94,14 @@ export default function SignUp() {
       }
 
       if (signUp.status === 'complete') {
-        await setActive({ session: signUp.createdSessionId });
+        // Use finalize() instead of setActive() to activate the session
+        const finalizeResult = await signUp.finalize();
+
+        if (finalizeResult.error) {
+          setErrorMsg(finalizeResult.error.message || 'Failed to activate session.');
+          return;
+        }
+
         posthog.identify(emailAddress, {
           email: emailAddress,
           $set_once: { first_sign_up_date: new Date().toISOString() },
@@ -98,8 +114,8 @@ export default function SignUp() {
         posthog.capture('sign_up_failed', { error_message: `Incomplete status: ${signUp.status}`, step: 'verify' });
       }
     } catch (err: any) {
-      console.error(JSON.stringify(err, null, 2));
-      const message = err.errors?.[0]?.message || 'An error occurred.';
+      console.error('Clerk Verify Error:', err);
+      const message = err.errors?.[0]?.message || err.message || 'An error occurred.';
       setErrorMsg(message);
       posthog.capture('sign_up_failed', { error_message: message, step: 'verify' });
     } finally {

@@ -19,7 +19,6 @@ export const posthog = new PostHog(projectToken || 'placeholder_key', {
   host,
   disabled: !isPostHogConfigured,
   captureAppLifecycleEvents: true,
-  customLogger: () => {}, // Suppress all PostHog logs in the terminal
   flushAt: 20,
   flushInterval: 10000,
   maxBatchSize: 100,
