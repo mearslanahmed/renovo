@@ -64,6 +64,7 @@ interface SubscriptionContextType {
   addSubscription: (sub: Omit<Subscription, 'id'>) => Promise<void>;
   updateSubscription: (id: string, sub: Partial<Subscription>) => Promise<void>;
   deleteSubscription: (id: string) => Promise<void>;
+  refreshSubscriptions: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -154,6 +155,24 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refreshSubscriptions = async () => {
+    if (isLoaded && isSignedIn) {
+      try {
+        const token = await getToken();
+        const data = await fetchSubscriptions(token);
+        const mappedData = data.map((item: any) => ({
+          ...item,
+          id: item._id,
+          icon: item.icon || resolveIcon(item.name),
+          color: resolveColor(item),
+        }));
+        setSubscriptions(mappedData);
+      } catch (error) {
+        console.error("Failed to refresh subscriptions", error);
+      }
+    }
+  };
+
   return (
     <SubscriptionContext.Provider
       value={{
@@ -161,6 +180,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         addSubscription,
         updateSubscription,
         deleteSubscription,
+        refreshSubscriptions,
         isLoading,
       }}
     >
