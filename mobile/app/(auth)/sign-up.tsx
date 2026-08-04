@@ -23,6 +23,7 @@ export default function SignUp() {
   const router = useRouter();
   const posthog = usePostHog();
 
+  const [fullName, setFullName] = React.useState('');
   const [emailAddress, setEmailAddress] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [pendingVerification, setPendingVerification] = React.useState(false);
@@ -31,6 +32,7 @@ export default function SignUp() {
   const [errorMsg, setErrorMsg] = React.useState('');
   const [showPassword, setShowPassword] = React.useState(false);
 
+  const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
 
   const onSignUpPress = async () => {
@@ -40,10 +42,16 @@ export default function SignUp() {
     Keyboard.dismiss();
 
     try {
+      const nameParts = fullName.trim().split(' ');
+      const firstName = nameParts[0] || undefined;
+      const lastName = nameParts.slice(1).join(' ') || undefined;
+
       // Use the new Core 3 password() method which handles create + sets identifier
       const result = await signUp.password({
         emailAddress,
         password,
+        firstName,
+        lastName,
       });
 
       if (result.error) {
@@ -157,10 +165,28 @@ export default function SignUp() {
                   <View className="auth-form">
                     
                     <View className="auth-field">
+                      <Text className="auth-label">Full Name</Text>
+                      <View className={clsx("auth-input-wrap", errorMsg && "auth-input-wrap-error")}>
+                        <Ionicons name="person-outline" size={20} color="#666666" />
+                        <TextInput
+                          value={fullName}
+                          onChangeText={setFullName}
+                          className="auth-input-inner"
+                          placeholder="Enter your full name"
+                          autoCapitalize="words"
+                          returnKeyType="next"
+                          onSubmitEditing={() => emailRef.current?.focus()}
+                          blurOnSubmit={false}
+                        />
+                      </View>
+                    </View>
+
+                    <View className="auth-field">
                       <Text className="auth-label">Email</Text>
                       <View className={clsx("auth-input-wrap", errorMsg && "auth-input-wrap-error")}>
                         <Ionicons name="mail-outline" size={20} color="#666666" />
                         <TextInput
+                          ref={emailRef}
                           autoCapitalize="none"
                           value={emailAddress}
                           onChangeText={setEmailAddress}

@@ -8,22 +8,21 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { clsx } from "clsx";
+
 import dayjs from "dayjs";
-import { icons } from "@/constants/icons";
-import { posthog } from "@/lib/posthog";
 
-import SubscriptionIcon from "./SubscriptionIcon";
-
-import { useCurrency } from "@/context/CurrencyContext";
-
-export interface CreateSubscriptionModalProps {
+export interface EditSubscriptionModalProps {
   visible: boolean;
+  subscription: Subscription | null;
   onClose: () => void;
-  onSubmit: (subscription: any) => void;
+  onSubmit: (id: string, updatedData: any) => Promise<void>;
 }
+
+const PAYMENT_METHODS = ["Credit Card", "Apple Pay", "PayPal", "Bank Transfer", "Other"];
 
 const CATEGORIES = [
   "Entertainment",
@@ -58,97 +57,86 @@ const BACKEND_CATEGORY_MAP: Record<string, string> = {
   Other: "other",
 };
 
-const POPULAR_PRESETS = [
-  { name: "Netflix", category: "Entertainment", icon: "netflix", color: "#f5a2a2", defaultPrice: "15.99" },
-  { name: "Spotify", category: "Music", icon: "spotify", color: "#d0a2f5", defaultPrice: "10.99" },
-  { name: "ChatGPT", category: "AI Tools", icon: "openai", color: "#b8d4e3", defaultPrice: "20.00" },
-  { name: "GitHub Pro", category: "Developer Tools", icon: "github", color: "#e8def8", defaultPrice: "4.00" },
-  { name: "Adobe CC", category: "Design", icon: "adobe", color: "#f5c542", defaultPrice: "54.99" },
-  { name: "Canva Pro", category: "Design", icon: "canva", color: "#b8e8d0", defaultPrice: "12.99" },
-  { name: "Claude Pro", category: "AI Tools", icon: "claude", color: "#b8d4e3", defaultPrice: "20.00" },
-  { name: "Notion", category: "Productivity", icon: "notion", color: "#b8e8d0", defaultPrice: "10.00" },
-  { name: "Dropbox", category: "Cloud", icon: "dropbox", color: "#a2c4f5", defaultPrice: "11.99" },
+const STATUS_OPTIONS: Array<"active" | "canceled" | "expired"> = [
+  "active",
+  "canceled",
+  "expired",
 ];
 
-const PAYMENT_METHODS = ["Credit Card", "Apple Pay", "PayPal", "Bank Transfer", "Other"];
-
-export default function CreateSubscriptionModal({
+export default function EditSubscriptionModal({
   visible,
+  subscription,
   onClose,
   onSubmit,
-}: CreateSubscriptionModalProps) {
-  const { currency: preferredCurrency } = useCurrency();
+}: EditSubscriptionModalProps) {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [frequency, setFrequency] = useState<"Monthly" | "Yearly">("Monthly");
   const [category, setCategory] = useState("Other");
-  const [selectedIconKey, setSelectedIconKey] = useState<string | null>(null);
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
-
+  const [status, setStatus] = useState<"active" | "canceled" | "expired">("active");
   const [startDateStr, setStartDateStr] = useState(dayjs().format("YYYY-MM-DD"));
-  const [renewalDateStr, setRenewalDateStr] = useState("");
+  const [renewalDateStr, setRenewalDateStr] = useState(dayjs().add(1, "month").format("YYYY-MM-DD"));
   const [paymentMethod, setPaymentMethod] = useState("Credit Card");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (subscription) {
+      setName(subscription.name || "");
+      setPrice(subscription.price ? String(subscription.price) : "");
+      setFrequency(
+        subscription.frequency?.toLowerCase() === "yearly" ? "Yearly" : "Monthly"
+      );
+      // Map category back to display string if possible
+      const cat = subscription.category || "other";
+      const displayCat =
+        CATEGORIES.find((c) => c.toLowerCase() === cat || BACKEND_CATEGORY_MAP[c] === cat) ||
+        "Other";
+      setCategory(displayCat);
+      setStatus((subscription.status as any) || "active");
+      setStartDateStr(
+        subscription.startDate ? dayjs(subscription.startDate).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD")
+      );
+      setRenewalDateStr(
+        subscription.renewalDate ? dayjs(subscription.renewalDate).format("YYYY-MM-DD") : ""
+      );
+      setPaymentMethod(subscription.paymentMethod || "Credit Card");
+    }
+  }, [subscription]);
 
   const isFormValid = name.trim().length > 0 && parseFloat(price) > 0;
 
-  const handleSelectPreset = (preset: typeof POPULAR_PRESETS[0]) => {
-    setName(preset.name);
-    setCategory(preset.category);
-    setSelectedIconKey(preset.icon);
-    setSelectedColor(preset.color);
-    if (!price) setPrice(preset.defaultPrice);
-  };
+  const handleSubmit = async () => {
+    if (!isFormValid || !subscription) return;
 
-  const handleClose = () => {
-    // Reset state before closing
-    setName("");
-    setPrice("");
-    setFrequency("Monthly");
-    setCategory("Other");
-    setSelectedIconKey(null);
-    setSelectedColor(null);
-    setStartDateStr(dayjs().format("YYYY-MM-DD"));
-    setRenewalDateStr("");
-    setPaymentMethod("Credit Card");
-    onClose();
-  };
+    setLoading(true);
+    try {
+      const parsedPrice = parseFloat(price);
+      const normalizedCategory = BACKEND_CATEGORY_MAP[category] || "other";
+      const parsedStart = dayjs(startDateStr).isValid() ? dayjs(startDateStr).toISOString() : undefined;
+      const parsedRenewal = renewalDateStr.trim() && dayjs(renewalDateStr.trim()).isValid()
+        ? dayjs(renewalDateStr.trim()).toISOString()
+        : undefined;
 
-  const handleSubmit = () => {
-    if (!isFormValid) return;
+      const updatedData: any = {
+        name: name.trim(),
+        price: parsedPrice,
+        frequency: frequency.toLowerCase(),
+        category: normalizedCategory,
+        plan: category,
+        color: CATEGORY_COLORS[category] || CATEGORY_COLORS["Other"],
+        status,
+        startDate: parsedStart,
+        renewalDate: parsedRenewal,
+        paymentMethod,
+      };
 
-    const parsedPrice = parseFloat(price);
-    const parsedStart = dayjs(startDateStr).isValid() ? dayjs(startDateStr).toISOString() : dayjs().toISOString();
-    const parsedRenewal = renewalDateStr.trim() && dayjs(renewalDateStr.trim()).isValid()
-      ? dayjs(renewalDateStr.trim()).toISOString()
-      : undefined;
-
-    const normalizedCategory = BACKEND_CATEGORY_MAP[category] || "other";
-
-    const newSubscription: any = {
-      name: name.trim(),
-      price: parsedPrice,
-      frequency: frequency.toLowerCase(),
-      category: normalizedCategory,
-      plan: category,
-      color: selectedColor || CATEGORY_COLORS[category] || CATEGORY_COLORS["Other"],
-      icon: selectedIconKey || name.trim().toLowerCase(),
-      status: "active",
-      startDate: parsedStart,
-      renewalDate: parsedRenewal,
-      currency: preferredCurrency || "USD",
-      paymentMethod,
-    };
-
-    onSubmit(newSubscription);
-    
-    posthog.capture('subscription_created', {
-      subscription_name: name.trim(),
-      subscription_price: parsedPrice,
-      subscription_frequency: frequency,
-      subscription_category: category,
-    });
-
-    handleClose();
+      await onSubmit(subscription.id, updatedData);
+      onClose();
+    } catch (err) {
+      console.error("Failed to submit edit:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -156,19 +144,19 @@ export default function CreateSubscriptionModal({
       visible={visible}
       animationType="slide"
       transparent={true}
-      onRequestClose={handleClose}
+      onRequestClose={onClose}
     >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View className="modal-overlay">
-          <Pressable style={{ flex: 1 }} onPress={handleClose} />
+          <Pressable style={{ flex: 1 }} onPress={onClose} />
 
           <View className="modal-container">
             <View className="modal-header">
-              <Text className="modal-title">New Subscription</Text>
-              <Pressable className="modal-close" onPress={handleClose}>
+              <Text className="modal-title">Edit Subscription</Text>
+              <Pressable className="modal-close" onPress={onClose}>
                 <Ionicons name="close" size={20} color="#081126" />
               </Pressable>
             </View>
@@ -178,57 +166,14 @@ export default function CreateSubscriptionModal({
               contentContainerStyle={{ paddingBottom: 40 }}
             >
               <View className="modal-body">
-                {/* Popular Services Quick Select */}
-                <View className="auth-field mb-2">
-                  <Text className="auth-label">Quick Select Platform</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row py-1">
-                    {POPULAR_PRESETS.map((preset) => {
-                      const isSelected = name === preset.name;
-                      return (
-                        <Pressable
-                          key={preset.name}
-                          onPress={() => handleSelectPreset(preset)}
-                          style={
-                            isSelected
-                              ? { backgroundColor: preset.color, borderColor: "#081126" }
-                              : undefined
-                          }
-                          className={clsx(
-                            "mr-2.5 px-3 py-2 rounded-2xl border flex-row items-center gap-2",
-                            isSelected
-                              ? "border-primary"
-                              : "border-black/10 bg-white"
-                          )}
-                        >
-                          <SubscriptionIcon
-                            name={preset.name}
-                            icon={preset.icon}
-                            color={preset.color}
-                            size={22}
-                          />
-                          <Text className="text-xs font-sans-semibold text-primary">
-                            {preset.name}
-                          </Text>
-                          {isSelected && (
-                            <Ionicons name="checkmark-circle" size={14} color="#081126" />
-                          )}
-                        </Pressable>
-                      );
-                    })}
-                  </ScrollView>
-                </View>
-
                 {/* Name Input */}
                 <View className="auth-field">
                   <Text className="auth-label">Name</Text>
                   <View className="auth-input-wrap">
                     <TextInput
                       value={name}
-                      onChangeText={(text) => {
-                        setName(text);
-                        setSelectedIconKey(null);
-                      }}
-                      placeholder="e.g. Netflix"
+                      onChangeText={setName}
+                      placeholder="Subscription Name"
                       placeholderTextColor="#666666"
                       className="auth-input-inner"
                     />
@@ -286,6 +231,32 @@ export default function CreateSubscriptionModal({
                         Yearly
                       </Text>
                     </Pressable>
+                  </View>
+                </View>
+
+                {/* Status Toggles */}
+                <View className="auth-field">
+                  <Text className="auth-label">Status</Text>
+                  <View className="picker-row">
+                    {STATUS_OPTIONS.map((st) => (
+                      <Pressable
+                        key={st}
+                        onPress={() => setStatus(st)}
+                        className={clsx(
+                          "picker-option capitalize",
+                          status === st && "picker-option-active"
+                        )}
+                      >
+                        <Text
+                          className={clsx(
+                            "picker-option-text capitalize",
+                            status === st && "picker-option-text-active"
+                          )}
+                        >
+                          {st}
+                        </Text>
+                      </Pressable>
+                    ))}
                   </View>
                 </View>
 
@@ -381,12 +352,16 @@ export default function CreateSubscriptionModal({
                 <Pressable
                   className={clsx(
                     "auth-button mt-4",
-                    !isFormValid && "auth-button-disabled"
+                    (!isFormValid || loading) && "auth-button-disabled"
                   )}
                   onPress={handleSubmit}
-                  disabled={!isFormValid}
+                  disabled={!isFormValid || loading}
                 >
-                  <Text className="auth-button-text">Create Subscription</Text>
+                  {loading ? (
+                    <ActivityIndicator color="#ffffff" />
+                  ) : (
+                    <Text className="auth-button-text">Save Changes</Text>
+                  )}
                 </Pressable>
               </View>
             </ScrollView>
