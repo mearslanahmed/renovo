@@ -52,7 +52,7 @@ export default function App() {
     try {
       await refreshSubscriptions();
     } catch (e) {
-      console.error(e);
+      // Silent catch
     } finally {
       setRefreshing(false);
     }
@@ -230,7 +230,7 @@ export default function App() {
                       try {
                         await deleteSubscription(item.id);
                       } catch (err) {
-                        console.error("Delete error:", err);
+                        // Silent catch
                       }
                     },
                   },

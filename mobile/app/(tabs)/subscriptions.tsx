@@ -51,7 +51,7 @@ const Subscriptions = () => {
     try {
       await refreshSubscriptions();
     } catch (e) {
-      console.error(e);
+      // Silent catch
     } finally {
       setRefreshing(false);
     }
@@ -219,7 +219,7 @@ const Subscriptions = () => {
                           try {
                             await deleteSubscription(item.id);
                           } catch (err) {
-                            console.error("Delete error:", err);
+                            // Silent catch
                           }
                         },
                       },

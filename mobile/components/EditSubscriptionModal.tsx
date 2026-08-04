@@ -137,7 +137,7 @@ export default function EditSubscriptionModal({
       await onSubmit(subscription.id, updatedData);
       onClose();
     } catch (err) {
-      console.error("Failed to submit edit:", err);
+      // Silent catch
     } finally {
       setLoading(false);
     }

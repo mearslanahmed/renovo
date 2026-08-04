@@ -21,7 +21,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
           setCurrencyState(stored);
         }
       } catch (err) {
-        console.error("Failed to load preferred currency:", err);
+        // Silent catch
       }
     };
     loadCurrency();
@@ -32,7 +32,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       setCurrencyState(code);
       await SecureStore.setItemAsync(CURRENCY_KEY, code);
     } catch (err) {
-      console.error("Failed to save currency preference:", err);
+      // Silent catch
     }
   };
 

@@ -67,12 +67,10 @@ export default function SignIn() {
         posthog.capture('user_signed_in');
         // The AuthLayout will automatically redirect to /(tabs) when isSignedIn becomes true
       } else {
-        console.error("Sign in incomplete. Status:", signIn.status);
         setErrorMsg(`Sign in incomplete (Status: ${signIn.status})`);
         posthog.capture('sign_in_failed', { error_message: `Incomplete status: ${signIn.status}` });
       }
     } catch (err: any) {
-      console.error(JSON.stringify(err, null, 2));
       const message = err.errors?.[0]?.message || err.message || 'An error occurred.';
       setErrorMsg(message);
       posthog.capture('sign_in_failed', { error_message: message });

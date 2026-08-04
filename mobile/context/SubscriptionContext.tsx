@@ -93,7 +93,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           
           setSubscriptions(mappedData);
         } catch (error) {
-          console.error("Failed to load subscriptions", error);
+          // Silent catch
         } finally {
           setIsLoading(false);
         }
@@ -118,7 +118,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       
       setSubscriptions((prev) => [mappedSub, ...prev]);
     } catch (error) {
-      console.error("Failed to add subscription", error);
       throw error;
     }
   };
@@ -139,7 +138,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         prev.map((item) => (item.id === id ? { ...item, ...mappedSub } : item))
       );
     } catch (error) {
-      console.error("Failed to update subscription", error);
       throw error;
     }
   };
@@ -150,7 +148,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       await apiDeleteSubscription(token, id);
       setSubscriptions((prev) => prev.filter((item) => item.id !== id));
     } catch (error) {
-      console.error("Failed to delete subscription", error);
       throw error;
     }
   };
@@ -168,7 +165,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         }));
         setSubscriptions(mappedData);
       } catch (error) {
-        console.error("Failed to refresh subscriptions", error);
+        // Silent catch
       }
     }
   };
