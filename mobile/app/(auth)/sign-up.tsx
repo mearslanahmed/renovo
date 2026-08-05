@@ -8,15 +8,18 @@ import {
   View,
   Pressable,
   ScrollView,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
   Keyboard,
   TouchableWithoutFeedback,
 } from 'react-native';
+import { SafeAreaView as RNSafeAreaView } from 'react-native-safe-area-context';
+import { styled } from 'nativewind';
 import { clsx } from 'clsx';
 import { Ionicons } from '@expo/vector-icons';
+
+const SafeAreaView = styled(RNSafeAreaView);
 
 export default function SignUp() {
   const { signUp, fetchStatus } = useSignUp();
