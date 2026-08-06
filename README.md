@@ -15,6 +15,7 @@
   <br/>
   
   [![Download APK](https://img.shields.io/badge/Download_APK-Releases-a3e635?style=for-the-badge&logo=android&logoColor=white)](https://github.com/mearslanahmed/renovo/releases)
+  [![Documentation](https://img.shields.io/badge/Documentation-Technical-blue?style=for-the-badge&logo=markdown&logoColor=white)](docs/DOCUMENTATION.md)
 
   <br/>
 

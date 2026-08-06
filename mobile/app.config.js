@@ -12,18 +12,19 @@ export default {
       supportsTablet: true,
     },
     android: {
+      package: 'com.mearslanahmed.renovo',
       adaptiveIcon: {
-        backgroundColor: '#E6F4FE',
-        foregroundImage: './assets/images/android-icon-foreground.png',
-        backgroundImage: './assets/images/android-icon-background.png',
-        monochromeImage: './assets/images/android-icon-monochrome.png',
+        backgroundColor: '#ea7a53',
+        foregroundImage: './assets/assets/images/android-icon-foreground.png',
+        backgroundImage: './assets/assets/images/android-icon-background.png',
+        monochromeImage: './assets/assets/images/android-icon-monochrome.png',
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
     },
     web: {
       output: 'static',
-      favicon: './assets/images/favicon.png',
+      favicon: './assets/assets/images/favicon.png',
     },
     plugins: [
       'expo-secure-store',
@@ -62,6 +63,9 @@ export default {
     extra: {
       posthogProjectToken: process.env.POSTHOG_PROJECT_TOKEN,
       posthogHost: process.env.POSTHOG_HOST || 'https://us.i.posthog.com',
+      eas: {
+        projectId: "6d4ea0f2-b0ad-4493-82e6-9158e4369782"
+      }
     },
   },
 }
